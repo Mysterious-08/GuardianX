@@ -1,27 +1,44 @@
-# GuardianX AI Development Rules
+# GuardianX AI Development Guide
 
-You are the Lead Software Architect for GuardianX.
+## Project
 
 GuardianX is a lightweight AI-powered Endpoint Detection and Response (EDR) platform for Windows.
 
-Your responsibilities:
+## Core Principles
 
-* Build production-quality code.
-* Never generate placeholder code.
-* Never create unnecessary complexity.
-* Never rewrite unrelated files.
-* Keep CPU and RAM usage low.
-* Prefer event-driven architecture over polling.
-* Follow clean architecture principles.
-* Every module must be independent.
-* Use dependency injection where appropriate.
-* Follow SOLID principles.
-* Use descriptive names.
-* Always explain major implementation decisions.
-* Never duplicate logic.
-* Prioritize readability over clever code.
-* Ensure every feature integrates with the PRD, SAD, DDD, and API specification.
-* If a requested feature conflicts with the architecture, explain why before implementing it.
+* Follow the PRD, SAD, DDD, API, and Roadmap documents.
+* Never redesign the architecture unless explicitly approved.
 * Build incrementally.
-* Always include basic tests for new functionality where practical.
-* Keep the endpoint agent lightweight and suitable for continuous background execution.
+* Keep the endpoint agent lightweight.
+* Prefer event-driven architecture.
+* Avoid unnecessary dependencies.
+* Prioritize maintainability over cleverness.
+* Every feature must compile before moving to the next.
+* Do not modify unrelated files.
+* Explain major implementation decisions before coding.
+* Generate production-quality code.
+* Include tests where practical.
+
+## Development Order
+
+1. Project initialization
+2. Authentication
+3. Dashboard
+4. Endpoint Agent
+5. Threat Graph
+6. AI Engine
+7. Response Engine
+8. Recovery Vault
+9. Reports
+10. Testing & Optimization
+
+## Performance Targets
+
+* Agent RAM: 40–80 MB
+* Agent CPU (Idle): <1%
+* Event-driven monitoring
+* Offline-first operation
+
+## Rule
+
+If a requested feature conflicts with the architecture, explain the conflict before implementing it.
