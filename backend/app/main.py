@@ -1,15 +1,18 @@
 from fastapi import FastAPI
 
+from app.core.config import settings
+
 app = FastAPI(
-    title="GuardianX API",
-    description="GuardianX Backend API",
-    version="1.0.0"
+    title=f"{settings.APP_NAME} API",
+    description=f"{settings.APP_NAME} Backend API",
+    version=settings.APP_VERSION,
 )
+
 
 @app.get("/")
 async def root():
     return {
-        "application": "GuardianX",
+        "application": settings.APP_NAME,
         "status": "Running",
-        "version": "1.0.0"
+        "version": settings.APP_VERSION,
     }
