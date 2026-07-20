@@ -2,7 +2,7 @@
 
 ## Current Version
 
-**v0.0.3**
+**v0.0.4**
 
 ---
 
@@ -29,16 +29,17 @@
 * [x] Create initial Alembic migration
 * [x] Configure security package
 * [x] Implement Argon2 password hashing
+* [x] Create authentication schemas (Pydantic)
+* [x] Create user service
+* [x] Implement JWT authentication
+* [x] Create authentication service
 
 ---
 
 ## In Progress 🔄
 
-### Authentication Foundation
+### Authentication APIs
 
-* [ ] Create authentication schemas (Pydantic)
-* [ ] Create user service (CRUD)
-* [ ] Implement JWT authentication
 * [ ] Create Register API
 * [ ] Create Login API
 * [ ] Authentication dependencies
@@ -109,6 +110,7 @@
 * ✅ **v0.0.1** - Project initialization
 * ✅ **v0.0.2** - Repository setup and project documentation
 * ✅ **v0.0.3** - Database foundation, migrations, security package, and password hashing
+* ✅ **v0.0.4** - Authentication foundation (schemas, user service, JWT authentication, and authentication service)
 
 ---
 
@@ -116,4 +118,4 @@
 
 🎯 **Next Task:**
 
-**Design and implement authentication schemas (Pydantic models) before building the authentication service and APIs.**
+**Implement the Register and Login API endpoints, followed by authentication dependencies and protected routes.**
