@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Generator
+from typing import Annotated
 
 from fastapi import Depends
 from sqlalchemy import create_engine, text
@@ -44,4 +45,4 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-DBSessionDep = Depends(get_db)
+DBSessionDep = Annotated[Session, Depends(get_db)]

@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.routes.auth import router as auth_router
 from app.core.config import settings
 from app.database.session import check_database_connection
 
@@ -19,6 +20,8 @@ app = FastAPI(
     version=settings.APP_VERSION,
     lifespan=lifespan,
 )
+
+app.include_router(auth_router)
 
 
 @app.get("/")
