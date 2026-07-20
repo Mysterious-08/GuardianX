@@ -10,7 +10,14 @@ This document defines the database schema for GuardianX. The database stores use
 
 ## Central Database
 
-* PostgreSQL
+Technology:
+- PostgreSQL
+
+Access Layer:
+- SQLAlchemy 2.0 ORM
+
+Schema Management:
+- Alembic
 
 Stores:
 
@@ -48,7 +55,7 @@ Fields:
 * user_id (Primary Key)
 * username
 * email
-* password_hash
+* password_hash (Argon2 via pwdlib)
 * role
 * created_at
 * last_login
@@ -235,7 +242,7 @@ The PostgreSQL database stores metadata only.
 
 Large files such as backups are stored in the encrypted Recovery Vault.
 
-SQLite stores temporary local data when offline and synchronizes it with PostgreSQL once connectivity is restored.
+The endpoint agent maintains a local SQLite database for temporary event storage, offline operation, and synchronization queues. When connectivity is available, queued events are securely synchronized with the central PostgreSQL database
 
 ---
 
@@ -247,6 +254,8 @@ SQLite stores temporary local data when offline and synchronizes it with Postgre
 * Use indexed timestamps for efficient querying.
 * Encrypt sensitive information.
 * Design tables to support future scalability.
+* Use Alembic for schema versioning and migrations.
+* Store passwords only as Argon2 hashes; never store plaintext credentials.
 
 ---
 

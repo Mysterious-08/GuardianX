@@ -2,7 +2,7 @@
 
 ## Current Version
 
-**v0.0.2**
+**v0.0.3**
 
 ---
 
@@ -19,28 +19,34 @@
 * [x] Verify Swagger documentation
 * [x] Create root `.gitignore`
 * [x] Create `AGENTS.md`
+* [x] Configure PostgreSQL
+* [x] Configure SQLAlchemy 2.0
+* [x] Configure Alembic
+* [x] Configure environment variables (`.env`)
+* [x] Configure database session management
+* [x] Implement startup database connectivity check
+* [x] Create User database model
+* [x] Create initial Alembic migration
+* [x] Configure security package
+* [x] Implement Argon2 password hashing
 
 ---
 
 ## In Progress 🔄
 
-* [ ] Configure PostgreSQL
-* [ ] Configure SQLAlchemy
-* [ ] Configure Alembic
-* [ ] Environment configuration (`.env`)
-* [ ] Database session management
+### Authentication Foundation
+
+* [ ] Create authentication schemas (Pydantic)
+* [ ] Create user service (CRUD)
+* [ ] Implement JWT authentication
+* [ ] Create Register API
+* [ ] Create Login API
+* [ ] Authentication dependencies
+* [ ] Protected routes
 
 ---
 
 ## Pending ⏳
-
-### Authentication
-
-* [ ] User model
-* [ ] Password hashing
-* [ ] JWT authentication
-* [ ] Login API
-* [ ] Authentication middleware
 
 ### Dashboard
 
@@ -92,11 +98,22 @@
 * Commit after every completed milestone.
 * Do not implement features outside the current sprint.
 * Keep GuardianX lightweight and maintainable.
+* Review every major code change before merging.
+* Keep business logic separate from API routes.
+* Use Alembic for every database schema change.
+
+---
+
+# Completed Milestones
+
+* ✅ **v0.0.1** - Project initialization
+* ✅ **v0.0.2** - Repository setup and project documentation
+* ✅ **v0.0.3** - Database foundation, migrations, security package, and password hashing
 
 ---
 
 # Current Focus
 
-🎯 Next Task:
+🎯 **Next Task:**
 
-**Configure PostgreSQL and establish the database foundation.**
+**Design and implement authentication schemas (Pydantic models) before building the authentication service and APIs.**
