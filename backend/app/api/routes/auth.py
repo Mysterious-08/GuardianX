@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 
 from app.database.session import DBSessionDep
-from app.schemas.auth import Token, UserCreate, UserLogin, UserResponse
+from app.schemas.auth import Token, UserCreate, UserResponse
+from app.security.dependencies import CurrentUserDep
 from app.services.auth_service import (
     AuthenticationError,
     AuthService,
@@ -46,14 +48,14 @@ def register(
     description="Authenticate using a username or email and return a JWT access token.",
 )
 def login(
-    user_data: UserLogin,
+    form_data: OAuth2PasswordRequestForm = Depends(),
     auth_service: AuthService = Depends(get_auth_service),
 ) -> Token:
     """Authenticate a user and return a bearer token."""
     try:
         user = auth_service.authenticate_user(
-            identifier=user_data.identifier,
-            password=user_data.password,
+            identifier=form_data.username,
+            password=form_data.password,
         )
     except InvalidCredentialsError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
@@ -61,3 +63,15 @@ def login(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
 
     return auth_service.create_access_token_for_user(user)
+
+
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get current user",
+    description="Return the authenticated GuardianX user's profile information.",
+)
+def get_me(current_user: CurrentUserDep) -> UserResponse:
+    """Return the authenticated user profile from the dependency layer."""
+    return UserResponse.model_validate(current_user)

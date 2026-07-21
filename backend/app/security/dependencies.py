@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
@@ -63,3 +64,6 @@ def get_current_user(db: DBSessionDep, token: str = Depends(oauth2_scheme)) -> U
         )
 
     return user
+
+
+CurrentUserDep = Annotated[User, Depends(get_current_user)]
