@@ -2,11 +2,11 @@
 
 ## Project Timeline
 
-Duration: 8 Weeks (2 Months)
+**Duration:** 8 Weeks (2 Months)
 
-Project Name: GuardianX
+**Project Name:** GuardianX
 
-Tagline: Predict. Prevent. Protect. Recover.
+**Tagline:** *Predict. Prevent. Protect. Recover.*
 
 ---
 
@@ -25,17 +25,17 @@ Define the complete software architecture before implementation.
 * Development Roadmap
 * AI Coding Rules
 
-Status: Completed
+**Status:** ✅ Completed
 
 ---
 
-# Phase 1 - Project Foundation
+# Phase 1 - Project Foundation ✅
 
 ## Goal
 
-Set up the complete development environment.
+Build the backend foundation and authentication infrastructure.
 
-Tasks
+### Completed Tasks
 
 * Initialize Git repository
 * Configure FastAPI backend
@@ -43,25 +43,61 @@ Tasks
 * Configure PostgreSQL
 * Configure SQLite for Agent
 * Configure Docker
-* Create folder structure
-* Create authentication module
-* Build login page
-* Build dashboard layout
+* Create project folder structure
+* Configure SQLAlchemy & Alembic
+* Configure environment variables
+* Configure security package
+* Implement Argon2 password hashing
+* Implement JWT authentication
+* Build authentication service
+* Create Register API
+* Create Login API (OAuth2 Password Flow)
+* Implement authentication dependencies
+* Implement protected routes
+* Implement current user endpoint (`/auth/me`)
+* Verify authentication using Swagger
 
-Deliverable
+### Deliverable
 
-Working application with authentication and dashboard.
+✅ Production-ready authentication module with JWT-based security.
+
+**Status:** ✅ Completed
 
 ---
 
-# Phase 2 - Endpoint Agent
+# Phase 2 - Device Management 🚧
+
+## Goal
+
+Build the foundation for GuardianX endpoint management.
+
+### Tasks
+
+* Device database model
+* Device schemas
+* Device service
+* Device registration API
+* Heartbeat API
+* Device inventory collection
+* Online/Offline tracking
+* Device dashboard APIs
+
+### Deliverable
+
+GuardianX can securely register and manage monitored devices.
+
+---
+
+# Phase 3 - Endpoint Agent
 
 ## Goal
 
 Build the Windows monitoring agent.
 
-Tasks
+### Tasks
 
+* Windows service
+* Secure authentication with backend
 * Process monitoring
 * File monitoring
 * Registry monitoring
@@ -70,19 +106,19 @@ Tasks
 * Event queue
 * Local SQLite storage
 
-Deliverable
+### Deliverable
 
-Agent capable of collecting security events.
+Agent capable of collecting and transmitting security events.
 
 ---
 
-# Phase 3 - Threat Intelligence Engine
+# Phase 4 - Threat Intelligence Engine
 
 ## Goal
 
 Transform raw events into meaningful attack analysis.
 
-Tasks
+### Tasks
 
 * Event normalization
 * Threat Graph Builder
@@ -91,58 +127,58 @@ Tasks
 * Explainable AI
 * Threat timeline generation
 
-Deliverable
+### Deliverable
 
-Threat Graph Engine with AI risk analysis.
+Threat Graph Engine with AI-powered risk analysis.
 
 ---
 
-# Phase 4 - Autonomous Response
+# Phase 5 - Autonomous Response
 
 ## Goal
 
-Automatically respond to threats.
+Automatically respond to detected threats.
 
-Tasks
+### Tasks
 
-* Kill malicious process
+* Kill malicious processes
 * Quarantine suspicious files
 * Backup important files
-* Generate alerts
+* Generate security alerts
 * Policy engine
 
-Deliverable
+### Deliverable
 
-Automated threat mitigation.
+Automated threat mitigation and containment.
 
 ---
 
-# Phase 5 - Recovery Vault
+# Phase 6 - Recovery Vault
 
 ## Goal
 
 Protect and restore user files.
 
-Tasks
+### Tasks
 
 * Encrypted backup
 * Version history
 * Restore engine
 * Recovery dashboard
 
-Deliverable
+### Deliverable
 
-Working Recovery Vault.
+Fully functional Recovery Vault.
 
 ---
 
-# Phase 6 - Reports & Analytics
+# Phase 7 - Reports & Analytics
 
 ## Goal
 
-Generate professional reports.
+Generate professional security reports and insights.
 
-Tasks
+### Tasks
 
 * PDF incident reports
 * Threat analytics
@@ -150,19 +186,19 @@ Tasks
 * Security health score
 * Endpoint statistics
 
-Deliverable
+### Deliverable
 
-Complete reporting module.
+Comprehensive reporting and analytics module.
 
 ---
 
-# Phase 7 - Testing & Optimization
+# Phase 8 - Testing & Optimization
 
 ## Goal
 
-Prepare GuardianX for demonstration.
+Prepare GuardianX for production-ready demonstration.
 
-Tasks
+### Tasks
 
 * Bug fixing
 * Performance optimization
@@ -171,7 +207,7 @@ Tasks
 * Documentation updates
 * Demo preparation
 
-Deliverable
+### Deliverable
 
 GuardianX Version 1.0
 
@@ -179,10 +215,11 @@ GuardianX Version 1.0
 
 # Version 1 Features
 
-* Windows Support
+* JWT Authentication
+* Device Registration
+* Windows Endpoint Agent
 * AI Threat Detection
-* Threat Graph
-* Endpoint Agent
+* Threat Graph Engine
 * Automated Response
 * Recovery Vault
 * Dashboard
@@ -206,17 +243,18 @@ GuardianX Version 1.0
 
 GuardianX Version 1.0 is considered complete when:
 
-* User authentication works.
-* Endpoint Agent collects events.
+* Authentication is fully operational.
+* Devices securely register with the backend.
+* Endpoint Agent collects security events.
 * Threat Graph correctly correlates attack events.
 * AI assigns meaningful threat scores.
 * Response Engine mitigates simulated threats.
 * Recovery Vault restores protected files.
-* Dashboard displays live information.
-* System remains lightweight and responsive.
+* Dashboard displays live endpoint information.
+* System remains lightweight, secure, and responsive.
 
 ---
 
-Project Motto
+# Project Motto
 
-Build software that users can trust, not software that merely looks impressive.
+**Build software that users can trust, not software that merely looks impressive.**
