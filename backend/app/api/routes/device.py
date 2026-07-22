@@ -4,6 +4,7 @@ from fastapi import APIRouter, status
 
 from app.api.dependencies import DeviceServiceDep
 from app.schemas.device import DeviceRegisterRequest, DeviceResponse
+from app.schemas.heartbeat import HeartbeatRequest, HeartbeatResponse
 from app.security.dependencies import CurrentUserDep
 
 
@@ -26,3 +27,17 @@ def register_device(
         device_data=device_data,
     )
     return device
+
+
+@router.post(
+    "/heartbeat",
+    response_model=HeartbeatResponse,
+    status_code=status.HTTP_200_OK,
+)
+def heartbeat(
+    heartbeat: HeartbeatRequest,
+    current_user: CurrentUserDep,
+    device_service: DeviceServiceDep,
+) -> HeartbeatResponse:
+    """Process an agent heartbeat and return the server response."""
+    return device_service.send_heartbeat(user=current_user, heartbeat=heartbeat)

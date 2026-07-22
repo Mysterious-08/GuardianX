@@ -7,6 +7,7 @@ from app.api.routes.auth import router as auth_router
 from app.core.config import settings
 from app.database.session import check_database_connection
 from app.api.routes.device import router as device_router
+from app.exceptions.handlers import register_exception_handlers
 
 
 @asynccontextmanager
@@ -21,6 +22,9 @@ app = FastAPI(
     version=settings.APP_VERSION,
     lifespan=lifespan,
 )
+
+# Register centralized exception handlers for domain errors.
+register_exception_handlers(app)
 
 app.include_router(auth_router)
 app.include_router(device_router)

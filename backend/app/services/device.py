@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 from uuid import UUID
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.device import Device
+from app.models.device import Device, DeviceStatus
 from app.models.user import User
 from app.schemas.device import DeviceRegisterRequest
 from app.exceptions.device import DeviceOwnershipError
+from app.exceptions.device import DeviceNotFoundError
+from app.schemas.heartbeat import HeartbeatRequest, HeartbeatResponse
+
+# Heartbeat interval returned to agents (seconds).
+HEARTBEAT_INTERVAL_SECONDS = 30
 
 
 class DeviceService:
@@ -80,6 +86,35 @@ class DeviceService:
             self.db.commit()
             self.db.refresh(existing_device)
             return existing_device
+        except Exception:
+            self.db.rollback()
+            raise
+
+    def send_heartbeat(self, *, user: User, heartbeat: HeartbeatRequest) -> HeartbeatResponse:
+        """Process an agent heartbeat and return a heartbeat response."""
+        existing_device = self.get_device_by_agent_id(agent_id=heartbeat.agent_id)
+
+        if existing_device is None:
+            raise DeviceNotFoundError("Device not found.")
+
+        if existing_device.user_id != user.id:
+            raise DeviceOwnershipError("Authenticated user does not own the device.")
+
+        now = datetime.now(timezone.utc)
+        existing_device.last_seen = now
+
+        if existing_device.status in (DeviceStatus.REGISTERED, DeviceStatus.OFFLINE):
+            existing_device.status = DeviceStatus.ONLINE
+
+        try:
+            self.db.commit()
+            self.db.refresh(existing_device)
+
+            return HeartbeatResponse(
+                status="OK",
+                server_time=now,
+                next_heartbeat_in=HEARTBEAT_INTERVAL_SECONDS,
+            )
         except Exception:
             self.db.rollback()
             raise
