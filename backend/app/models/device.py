@@ -12,6 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.base import Base
 
 if TYPE_CHECKING:
+    from app.models.device_inventory import DeviceInventory
     from app.models.user import User
 
 
@@ -96,4 +97,9 @@ class Device(Base):
 
     user: Mapped["User"] = relationship(
         back_populates="devices",
+    )
+    inventory: Mapped["DeviceInventory | None"] = relationship(
+        back_populates="device",
+        uselist=False,
+        cascade="all, delete-orphan",
     )

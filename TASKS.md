@@ -39,29 +39,32 @@
 * [x] Implement protected routes
 * [x] Implement current user endpoint (`GET /auth/me`)
 * [x] Verify complete authentication flow using Swagger
-
+* [x] Design device registration architecture
+* [x] Create Device database model
+* [x] Create Device schemas
+* [x] Create Device service
+* [x] Implement Device Registration API
+* [x] Verify Device Registration using Swagger
+* [x] Create Heartbeat schemas
+* [x] Implement Heartbeat service
+* [x] Implement Heartbeat API
+* [x] Implement centralized exception handling
+* [x] Verify complete Heartbeat flow using Swagger
+* [x] Verify authorization (403) and not-found (404) scenarios
+* [x] Create Device database model
 ---
 
 ## In Progress 🔄
 
 ### Device Management
 
-* [ ] Design device registration architecture
-* [ ] Create Device database model
-* [ ] Create Device schemas
-* [ ] Create Device service
-* [ ] Implement Device Registration API
+* [ ] Device inventory collection
+* [ ] Automatic online/offline status monitoring
+* [ ] Device dashboard APIs
 
 ---
 
 ## Pending ⏳
-
-### Device Management
-
-* [ ] Heartbeat service
-* [ ] Device inventory collection
-* [ ] Online/Offline status tracking
-* [ ] Device dashboard APIs
 
 ### Dashboard
 
@@ -130,6 +133,9 @@
 * ✅ **v0.0.3** - Database foundation, migrations, security package, and password hashing
 * ✅ **v0.0.4** - Authentication foundation (schemas, user service, JWT authentication, and authentication service)
 * ✅ **v0.0.5** - Complete authentication module (Register API, Login API, OAuth2 Password Flow, JWT authentication, protected routes, `/auth/me`, and Swagger verification)
+* ✅ **v0.0.6** - Device Management Foundation (Device registration, heartbeat endpoint, centralized exception handling,
+device ownership validation, Swagger verification,
+and end-to-end testing.)
 
 ---
 
@@ -137,4 +143,17 @@
 
 🎯 **Next Task:**
 
-**Implement the Device Registration module, beginning with the Device model, service layer, schemas, and registration API. This will establish the foundation for heartbeats, inventory collection, and endpoint management.**
+** Implement Device Inventory Collection.
+
+Collect static endpoint information including:
+
+- CPU
+- RAM
+- Disk
+- Network interfaces
+- Operating system
+- Installed software (future)
+- Security software (future)
+
+This establishes the foundation for endpoint visibility,
+dashboard reporting, and threat correlation. **
