@@ -14,6 +14,7 @@ from app.database.base import Base
 if TYPE_CHECKING:
     from app.models.device_inventory import DeviceInventory
     from app.models.user import User
+    from app.models.security_event import SecurityEvent
 
 
 class DeviceStatus(PyEnum):
@@ -101,5 +102,9 @@ class Device(Base):
     inventory: Mapped["DeviceInventory | None"] = relationship(
         back_populates="device",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+    security_events: Mapped[list["SecurityEvent"]] = relationship(
+        back_populates="device",
         cascade="all, delete-orphan",
     )
