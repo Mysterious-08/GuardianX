@@ -98,6 +98,7 @@
 
 ### Device Management
 
+* [x] Device inventory collection
 * [ ] Automatic online/offline status monitoring
 * [ ] Device dashboard APIs
 
@@ -177,14 +178,31 @@
 * ✅ **v0.0.5** - Complete authentication module (Register API, Login API, OAuth2 Password Flow, JWT authentication, protected routes, `/auth/me`, and Swagger verification)
 * ✅ **v0.0.6** - Device Management Foundation (Device registration, heartbeat endpoint, centralized exception handling, device ownership validation, Swagger verification, and end-to-end testing)
 * ✅ **v0.0.7** - Endpoint Visibility & Security Event Foundation (Device inventory collection, inventory ownership validation, security event ingestion/retrieval, security event ownership validation, API testing, and end-to-end verification)
+* ✅ **v0.0.8** - Device Inventory Collection (inventory model, migration, schemas, service, API endpoints, ownership validation, and automated testing)
 
 ---
 
 # Current Focus
 
+✅ **Completed Task:**
+
+**Device Inventory Collection**
+
+Includes:
+
+- Device inventory database model
+- Inventory schema validation
+- Inventory persistence service
+- Create/update inventory behavior
+- Device ownership validation
+- GET inventory API
+- POST inventory API
+- API integration tests
+- Full backend verification
+
 🎯 **Next Task:**
 
-**Implement Automatic Online/Offline Status Monitoring.**
+**Automatic Online/Offline Status Monitoring**
 
 The system should automatically determine the current availability of registered GuardianX devices based on heartbeat activity.
 
