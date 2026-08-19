@@ -207,3 +207,62 @@ def test_service_preserves_nested_payloads() -> None:
     assert result.payload["process"]["name"] == "powershell.exe"
     assert result.payload["process"]["parent"]["pid"] == 1000
     assert result.payload["metadata"]["flags"] == ["encoded", "suspicious"]
+
+
+def test_get_events_by_agent_id_returns_events_for_owner() -> None:
+    db = _create_in_memory_session()
+
+    user = User(username="gina", email="gina@example.com", hashed_password="x")
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    agent_id = uuid4()
+    device = Device(agent_id=agent_id, user_id=user.id, hostname="host", operating_system="Linux")
+    db.add(device)
+    db.commit()
+    db.refresh(device)
+
+    event = SecurityEvent(device_id=device.id, event_type=SecurityEventType.PROCESS, severity=SecurityEventSeverity.LOW, source="s", timestamp=datetime.now(timezone.utc), payload={})
+    db.add(event)
+    db.commit()
+
+    service = SecurityEventService(db)
+    results = service.get_events_by_agent_id(user=user, agent_id=agent_id)
+    assert len(results) == 1
+
+
+def test_get_events_by_agent_id_raises_for_unknown_agent() -> None:
+    db = _create_in_memory_session()
+
+    user = User(username="hank", email="hank@example.com", hashed_password="x")
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    service = SecurityEventService(db)
+
+    with pytest.raises(DeviceNotFoundError):
+        service.get_events_by_agent_id(user=user, agent_id=uuid4())
+
+
+def test_get_events_by_agent_id_raises_on_ownership_violation() -> None:
+    db = _create_in_memory_session()
+
+    owner = User(username="owner2", email="owner2@example.com", hashed_password="x")
+    other = User(username="other", email="other@example.com", hashed_password="x")
+    db.add_all([owner, other])
+    db.commit()
+    db.refresh(owner)
+    db.refresh(other)
+
+    agent_id = uuid4()
+    device = Device(agent_id=agent_id, user_id=owner.id, hostname="host", operating_system="Linux")
+    db.add(device)
+    db.commit()
+    db.refresh(device)
+
+    service = SecurityEventService(db)
+
+    with pytest.raises(DeviceOwnershipError):
+        service.get_events_by_agent_id(user=other, agent_id=agent_id)

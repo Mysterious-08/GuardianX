@@ -29,6 +29,22 @@ class SecurityEventService:
         )
         return self.db.scalars(statement).all()
 
+    def get_events_by_agent_id(self, *, user: User, agent_id: UUID) -> list[SecurityEvent]:
+        """Find device by agent_id, verify ownership, and return its events.
+
+        Raises DeviceNotFoundError or DeviceOwnershipError when appropriate.
+        """
+        device_stmt = select(Device).where(Device.agent_id == agent_id)
+        device = self.db.scalar(device_stmt)
+
+        if device is None:
+            raise DeviceNotFoundError("Device not found.")
+
+        if device.user_id != user.id:
+            raise DeviceOwnershipError("Authenticated user does not own the device.")
+
+        return self.get_events_by_device_id(device_id=device.id)
+
     def create_event(self, *, user: User, agent_id: UUID, event_data: SecurityEventRequest) -> SecurityEvent:
         """Create and persist a SecurityEvent for the device identified by agent_id.
 

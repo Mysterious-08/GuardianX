@@ -3,10 +3,15 @@ from __future__ import annotations
 from fastapi import APIRouter, status
 from uuid import UUID
 
-from app.api.dependencies import DeviceServiceDep, DeviceInventoryServiceDep
+from app.api.dependencies import (
+    DeviceServiceDep,
+    DeviceInventoryServiceDep,
+    SecurityEventServiceDep,
+)
 from app.schemas.device import DeviceRegisterRequest, DeviceResponse
 from app.schemas.heartbeat import HeartbeatRequest, HeartbeatResponse
 from app.schemas.device_inventory import DeviceInventoryRequest, DeviceInventoryResponse
+from app.schemas.security_event import SecurityEventRequest, SecurityEventResponse
 from app.security.dependencies import CurrentUserDep
 
 
@@ -67,3 +72,44 @@ def upsert_inventory(
         inventory_data=inventory_data,
     )
     return inventory
+
+
+@router.post(
+    "/{agent_id}/events",
+    response_model=SecurityEventResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_security_event(
+    agent_id: UUID,
+    event_data: SecurityEventRequest,
+    current_user: CurrentUserDep,
+    security_event_service: SecurityEventServiceDep,
+) -> SecurityEventResponse:
+    """Create a security event for the authenticated device identified by agent_id.
+
+    This route delegates business logic to ``SecurityEventService`` which enforces
+    device lookup and ownership validation.
+    """
+    event = security_event_service.create_event(
+        user=current_user,
+        agent_id=agent_id,
+        event_data=event_data,
+    )
+    return event
+
+
+@router.get(
+    "/{agent_id}/events",
+    response_model=list[SecurityEventResponse],
+    status_code=status.HTTP_200_OK,
+)
+def get_security_events(
+    agent_id: UUID,
+    current_user: CurrentUserDep,
+    security_event_service: SecurityEventServiceDep,
+) -> list[SecurityEventResponse]:
+    """Return the list of security events for the authenticated user's device.
+
+    Ownership and existence checks are performed in the service layer.
+    """
+    return security_event_service.get_events_by_agent_id(user=current_user, agent_id=agent_id)
