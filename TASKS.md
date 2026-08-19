@@ -2,13 +2,15 @@
 
 ## Current Version
 
-**v0.0.5**
+**v0.0.7**
 
 ---
 
 # Sprint 1 - Project Foundation
 
 ## Completed ✅
+
+### Project Foundation
 
 * [x] Create GitHub repository
 * [x] Create project documentation (PRD, SAD, DDD, API, ROADMAP)
@@ -19,6 +21,9 @@
 * [x] Verify Swagger documentation
 * [x] Create root `.gitignore`
 * [x] Create `AGENTS.md`
+
+### Database & Backend Foundation
+
 * [x] Configure PostgreSQL
 * [x] Configure SQLAlchemy 2.0
 * [x] Configure Alembic
@@ -27,6 +32,9 @@
 * [x] Implement startup database connectivity check
 * [x] Create User database model
 * [x] Create initial Alembic migration
+
+### Security & Authentication
+
 * [x] Configure security package
 * [x] Implement Argon2 password hashing
 * [x] Create authentication schemas (Pydantic)
@@ -39,6 +47,9 @@
 * [x] Implement protected routes
 * [x] Implement current user endpoint (`GET /auth/me`)
 * [x] Verify complete authentication flow using Swagger
+
+### Device Management Foundation
+
 * [x] Design device registration architecture
 * [x] Create Device database model
 * [x] Create Device schemas
@@ -51,14 +62,42 @@
 * [x] Implement centralized exception handling
 * [x] Verify complete Heartbeat flow using Swagger
 * [x] Verify authorization (403) and not-found (404) scenarios
-* [x] Create Device database model
+
+### Device Inventory
+
+* [x] Create Device Inventory database model
+* [x] Create Device Inventory schemas
+* [x] Create Device Inventory service
+* [x] Implement Device Inventory API
+* [x] Implement inventory create/update behavior
+* [x] Implement inventory ownership validation
+* [x] Verify Device Inventory using API/Swagger
+* [x] Create Device Inventory service tests
+* [x] Verify Device Inventory tests
+
+### Security Events
+
+* [x] Create Security Event database model
+* [x] Create Security Event database migration
+* [x] Create Security Event schemas
+* [x] Create Security Event service
+* [x] Implement Security Event ingestion API
+* [x] Implement Security Event retrieval API
+* [x] Implement Security Event ownership validation
+* [x] Implement Security Event not-found handling
+* [x] Verify Security Event schemas
+* [x] Verify Security Event service
+* [x] Verify Security Event API routes
+* [x] Verify Security Event ingestion and retrieval using API
+* [x] Create Security Event tests
+* [x] Verify complete backend test suite
+
 ---
 
 ## In Progress 🔄
 
 ### Device Management
 
-* [ ] Device inventory collection
 * [ ] Automatic online/offline status monitoring
 * [ ] Device dashboard APIs
 
@@ -123,6 +162,9 @@
 * Use dependency injection throughout the application.
 * Use Alembic for every database schema change.
 * Keep API routes thin and place business logic in services.
+* Add automated tests for every major backend feature.
+* Verify important API flows using Swagger or an equivalent API client.
+* Update this `task.md` after every completed milestone.
 
 ---
 
@@ -133,9 +175,8 @@
 * ✅ **v0.0.3** - Database foundation, migrations, security package, and password hashing
 * ✅ **v0.0.4** - Authentication foundation (schemas, user service, JWT authentication, and authentication service)
 * ✅ **v0.0.5** - Complete authentication module (Register API, Login API, OAuth2 Password Flow, JWT authentication, protected routes, `/auth/me`, and Swagger verification)
-* ✅ **v0.0.6** - Device Management Foundation (Device registration, heartbeat endpoint, centralized exception handling,
-device ownership validation, Swagger verification,
-and end-to-end testing.)
+* ✅ **v0.0.6** - Device Management Foundation (Device registration, heartbeat endpoint, centralized exception handling, device ownership validation, Swagger verification, and end-to-end testing)
+* ✅ **v0.0.7** - Endpoint Visibility & Security Event Foundation (Device inventory collection, inventory ownership validation, security event ingestion/retrieval, security event ownership validation, API testing, and end-to-end verification)
 
 ---
 
@@ -143,17 +184,18 @@ and end-to-end testing.)
 
 🎯 **Next Task:**
 
-** Implement Device Inventory Collection.
+**Implement Automatic Online/Offline Status Monitoring.**
 
-Collect static endpoint information including:
+The system should automatically determine the current availability of registered GuardianX devices based on heartbeat activity.
 
-- CPU
-- RAM
-- Disk
-- Network interfaces
-- Operating system
-- Installed software (future)
-- Security software (future)
+Initial goals:
 
-This establishes the foundation for endpoint visibility,
-dashboard reporting, and threat correlation. **
+- Track the device's `last_seen` timestamp.
+- Mark devices as `ONLINE` when valid heartbeat activity is received.
+- Detect devices that have stopped sending heartbeats.
+- Automatically mark inactive devices as `OFFLINE`.
+- Preserve existing device ownership and authorization rules.
+- Keep the monitoring mechanism lightweight.
+- Keep business logic inside the service layer.
+- Add automated tests for status transitions.
+- Verify the behavior through the API.
