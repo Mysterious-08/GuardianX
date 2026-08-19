@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -86,6 +86,11 @@ class DeviceInventoryRequest(BaseModel):
     total_disk_mb: PositiveIntegerField = None
     local_ip: LocalIpField = None
     mac_address: MacAddressField = None
+    cpu_info: dict[str, Any] | None = None
+    ram_info: dict[str, Any] | None = None
+    disk_info: dict[str, Any] | None = None
+    network_interfaces: list[dict[str, Any]] | None = None
+    operating_system_info: dict[str, Any] | None = None
 
 
 class DeviceInventoryResponse(BaseModel):
@@ -106,5 +111,10 @@ class DeviceInventoryResponse(BaseModel):
     total_disk_mb: int | None = None
     local_ip: str | None = None
     mac_address: str | None = None
+    cpu_info: dict[str, Any] | None = None
+    ram_info: dict[str, Any] | None = None
+    disk_info: dict[str, Any] | None = None
+    network_interfaces: list[dict[str, Any]] | None = None
+    operating_system_info: dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime

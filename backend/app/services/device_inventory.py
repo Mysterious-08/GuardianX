@@ -32,6 +32,24 @@ class DeviceInventoryService:
         statement = select(DeviceInventory).where(DeviceInventory.device_id == device_id)
         return self.db.scalar(statement)
 
+    def get_inventory_by_agent_id(
+        self,
+        *,
+        user: User,
+        agent_id: UUID,
+    ) -> DeviceInventory | None:
+        """Return a device's inventory after validating existence and ownership."""
+        device_stmt = select(Device).where(Device.agent_id == agent_id)
+        device = self.db.scalar(device_stmt)
+
+        if device is None:
+            raise DeviceNotFoundError("Device not found.")
+
+        if device.user_id != user.id:
+            raise DeviceOwnershipError("Authenticated user does not own the device.")
+
+        return self.get_inventory_by_device_id(device_id=device.id)
+
     def create_or_update_inventory(
         self,
         *,
@@ -77,6 +95,11 @@ class DeviceInventoryService:
                 total_disk_mb=inventory_data.total_disk_mb,
                 local_ip=inventory_data.local_ip,
                 mac_address=inventory_data.mac_address,
+                cpu_info=inventory_data.cpu_info,
+                ram_info=inventory_data.ram_info,
+                disk_info=inventory_data.disk_info,
+                network_interfaces=inventory_data.network_interfaces,
+                operating_system_info=inventory_data.operating_system_info,
             )
 
             try:
@@ -100,6 +123,11 @@ class DeviceInventoryService:
         existing_inventory.total_disk_mb = inventory_data.total_disk_mb
         existing_inventory.local_ip = inventory_data.local_ip
         existing_inventory.mac_address = inventory_data.mac_address
+        existing_inventory.cpu_info = inventory_data.cpu_info
+        existing_inventory.ram_info = inventory_data.ram_info
+        existing_inventory.disk_info = inventory_data.disk_info
+        existing_inventory.network_interfaces = inventory_data.network_interfaces
+        existing_inventory.operating_system_info = inventory_data.operating_system_info
 
         try:
             self.db.commit()

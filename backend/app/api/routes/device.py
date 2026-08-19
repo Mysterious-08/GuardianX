@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, HTTPException, status
 from uuid import UUID
 
 from app.api.dependencies import (
@@ -71,6 +71,29 @@ def upsert_inventory(
         agent_id=agent_id,
         inventory_data=inventory_data,
     )
+    return inventory
+
+
+@router.get(
+    "/{agent_id}/inventory",
+    response_model=DeviceInventoryResponse,
+    status_code=status.HTTP_200_OK,
+)
+def get_inventory(
+    agent_id: UUID,
+    current_user: CurrentUserDep,
+    device_inventory_service: DeviceInventoryServiceDep,
+) -> DeviceInventoryResponse:
+    """Return the current inventory for the authenticated device."""
+    inventory = device_inventory_service.get_inventory_by_agent_id(
+        user=current_user,
+        agent_id=agent_id,
+    )
+    if inventory is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Device inventory not found.",
+        )
     return inventory
 
 

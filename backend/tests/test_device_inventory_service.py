@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import create_engine, select
@@ -22,162 +22,284 @@ def _create_in_memory_session():
     return Session()
 
 
-def test_create_inventory_creates_record_and_persists() -> None:
-    db = _create_in_memory_session()
-
-    # Create a user and device belonging to that user.
-    user = User(username="alice", email="alice@example.com", hashed_password="x")
+def _create_user(db, username: str) -> User:
+    user = User(username=username, email=f"{username}@example.com", hashed_password="x")
     db.add(user)
     db.commit()
     db.refresh(user)
+    return user
 
-    agent_id = uuid4()
-    device = Device(agent_id=agent_id, user_id=user.id, hostname="host", operating_system="Linux")
+
+def _create_device(db, user: User, *, agent_id: UUID | None = None) -> Device:
+    device = Device(
+        agent_id=agent_id or uuid4(),
+        user_id=user.id,
+        hostname="host",
+        operating_system="Linux",
+    )
     db.add(device)
     db.commit()
     db.refresh(device)
+    return device
+
+
+def _inventory_request(**overrides) -> DeviceInventoryRequest:
+    payload = {
+        "hostname": "endpoint-01",
+        "operating_system": "Windows",
+        "os_version": "11",
+        "architecture": "x64",
+        "agent_version": "1.2.3",
+        "cpu_model": "Intel Core i7",
+        "cpu_cores": 8,
+        "total_memory_mb": 16384,
+        "total_disk_mb": 512000,
+        "local_ip": "192.168.1.10",
+        "mac_address": "00:11:22:33:44:55",
+        "cpu_info": {
+            "manufacturer": "Intel",
+            "model": "Core i7-12700",
+            "cores": {"physical": 12, "logical": 20},
+        },
+        "ram_info": {
+            "total_mb": 16384,
+            "modules": [{"capacity_mb": 8192, "speed_mhz": 3200}],
+        },
+        "disk_info": {
+            "volumes": [{"drive": "C:", "size_gb": 512, "free_gb": 218}],
+        },
+        "network_interfaces": [
+            {
+                "name": "Ethernet",
+                "mac_address": "00:11:22:33:44:55",
+                "addresses": ["192.168.1.10"],
+            }
+        ],
+        "operating_system_info": {
+            "name": "Windows 11 Pro",
+            "build": "22631",
+            "edition": "Professional",
+        },
+    }
+    payload.update(overrides)
+    return DeviceInventoryRequest(**payload)
+
+
+def test_create_inventory_creates_record_and_persists() -> None:
+    db = _create_in_memory_session()
+    user = _create_user(db, "alice")
+    device = _create_device(db, user)
 
     service = DeviceInventoryService(db)
+    request = _inventory_request()
+    inventory = service.create_or_update_inventory(user=user, agent_id=device.agent_id, inventory_data=request)
 
-    payload = DeviceInventoryRequest(
-        hostname="host",
-        operating_system="Linux",
-        os_version="1.0",
-        architecture="x64",
-        agent_version="1.0.0",
-        cpu_model="Intel",
-        cpu_cores=4,
-        total_memory_mb=8192,
-        total_disk_mb=256000,
-        local_ip="10.0.0.1",
-        mac_address="00:11:22:33:44:55",
-    )
-
-    inventory = service.create_or_update_inventory(user=user, agent_id=agent_id, inventory_data=payload)
-
+    assert inventory is not None
     assert inventory.device_id == device.id
-    assert inventory.hostname == "host"
+    assert inventory.hostname == request.hostname
+    assert inventory.operating_system == request.operating_system
+    assert inventory.cpu_cores == request.cpu_cores
+    assert inventory.total_memory_mb == request.total_memory_mb
+    assert inventory.total_disk_mb == request.total_disk_mb
+    assert inventory.local_ip == request.local_ip
+    assert inventory.mac_address == request.mac_address
+    assert inventory.cpu_info == request.cpu_info
+    assert inventory.ram_info == request.ram_info
+    assert inventory.disk_info == request.disk_info
+    assert inventory.network_interfaces == request.network_interfaces
+    assert inventory.operating_system_info == request.operating_system_info
+    assert inventory.id is not None
 
-    # Ensure the record is present in the database.
     stmt = select(DeviceInventory).where(DeviceInventory.device_id == device.id)
     persisted = db.scalar(stmt)
     assert persisted is not None
     assert persisted.id == inventory.id
 
 
-def test_update_inventory_updates_existing_record_and_preserves_id() -> None:
+def test_create_inventory_preserves_all_inventory_fields() -> None:
     db = _create_in_memory_session()
+    user = _create_user(db, "nested")
+    device = _create_device(db, user)
+    request = _inventory_request()
 
-    user = User(username="bob", email="bob@example.com", hashed_password="x")
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    agent_id = uuid4()
-    device = Device(agent_id=agent_id, user_id=user.id, hostname="old-host", operating_system="Linux")
-    db.add(device)
-    db.commit()
-    db.refresh(device)
-
-    # Create initial inventory
-    initial = DeviceInventory(
-        device_id=device.id,
-        hostname="old-host",
-        operating_system="Linux",
-    )
-    db.add(initial)
-    db.commit()
-    db.refresh(initial)
-
-    service = DeviceInventoryService(db)
-
-    updated_payload = DeviceInventoryRequest(
-        hostname="new-host",
-        operating_system="Linux",
-        os_version="2.0",
-        architecture="arm64",
-        agent_version="2.0.0",
-        cpu_model="AMD",
-        cpu_cores=8,
-        total_memory_mb=16384,
-        total_disk_mb=512000,
-        local_ip="10.0.0.2",
-        mac_address="AA:BB:CC:DD:EE:FF",
+    inventory = DeviceInventoryService(db).create_or_update_inventory(
+        user=user,
+        agent_id=device.agent_id,
+        inventory_data=request,
     )
 
-    result = service.create_or_update_inventory(user=user, agent_id=agent_id, inventory_data=updated_payload)
-
-    assert result.id == initial.id
-    assert result.device_id == initial.device_id
-    assert result.hostname == "new-host"
-    assert result.os_version == "2.0"
-
-    # Ensure only one inventory record exists for the device.
-    stmt = select(DeviceInventory).where(DeviceInventory.device_id == device.id)
-    persisted = db.scalar(stmt)
-    assert persisted is not None
+    db.refresh(inventory)
+    assert inventory.cpu_info == request.cpu_info
+    assert inventory.ram_info == request.ram_info
+    assert inventory.disk_info == request.disk_info
+    assert inventory.network_interfaces == request.network_interfaces
+    assert inventory.operating_system_info == request.operating_system_info
 
 
-def test_create_or_update_inventory_raises_for_unknown_device() -> None:
+def test_create_inventory_raises_for_unknown_device() -> None:
     db = _create_in_memory_session()
-
-    user = User(username="carol", email="carol@example.com", hashed_password="x")
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    service = DeviceInventoryService(db)
+    user = _create_user(db, "carol")
 
     with pytest.raises(DeviceNotFoundError):
-        service.create_or_update_inventory(user=user, agent_id=uuid4(), inventory_data=DeviceInventoryRequest(hostname="h", operating_system="OS"))
+        DeviceInventoryService(db).create_or_update_inventory(
+            user=user,
+            agent_id=uuid4(),
+            inventory_data=_inventory_request(),
+        )
 
 
-def test_create_or_update_inventory_raises_on_ownership_violation() -> None:
+def test_create_inventory_raises_on_ownership_violation() -> None:
     db = _create_in_memory_session()
-
-    owner = User(username="owner", email="owner@example.com", hashed_password="x")
-    attacker = User(username="attacker", email="attacker@example.com", hashed_password="x")
-    db.add_all([owner, attacker])
-    db.commit()
-    db.refresh(owner)
-    db.refresh(attacker)
-
-    agent_id = uuid4()
-    device = Device(agent_id=agent_id, user_id=owner.id, hostname="host", operating_system="Linux")
-    db.add(device)
-    db.commit()
-    db.refresh(device)
-
-    service = DeviceInventoryService(db)
+    owner = _create_user(db, "owner")
+    other = _create_user(db, "other")
+    device = _create_device(db, owner)
 
     with pytest.raises(DeviceOwnershipError):
-        service.create_or_update_inventory(user=attacker, agent_id=agent_id, inventory_data=DeviceInventoryRequest(hostname="h", operating_system="OS"))
+        DeviceInventoryService(db).create_or_update_inventory(
+            user=other,
+            agent_id=device.agent_id,
+            inventory_data=_inventory_request(),
+        )
 
 
-def test_get_inventory_by_device_id_returns_inventory_or_none() -> None:
+def test_update_inventory_updates_existing_record() -> None:
     db = _create_in_memory_session()
-
-    user = User(username="dave", email="dave@example.com", hashed_password="x")
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    agent_id = uuid4()
-    device = Device(agent_id=agent_id, user_id=user.id, hostname="host", operating_system="Linux")
-    db.add(device)
-    db.commit()
-    db.refresh(device)
-
+    user = _create_user(db, "update")
+    device = _create_device(db, user)
     service = DeviceInventoryService(db)
 
-    # No inventory yet
-    assert service.get_inventory_by_device_id(device_id=device.id) is None
+    initial = service.create_or_update_inventory(
+        user=user,
+        agent_id=device.agent_id,
+        inventory_data=_inventory_request(),
+    )
+    updated_request = _inventory_request(
+        hostname="endpoint-02",
+        cpu_cores=16,
+        total_memory_mb=32768,
+        total_disk_mb=1024000,
+        cpu_info={"manufacturer": "AMD", "model": "Ryzen 9"},
+        ram_info={"total_mb": 32768, "modules": [{"capacity_mb": 16384}]},
+        disk_info={"volumes": [{"drive": "D:", "size_gb": 1024}]},
+        network_interfaces=[{"name": "Wi-Fi", "addresses": ["10.0.0.5"]}],
+        operating_system_info={"name": "Windows 11 Enterprise", "build": "26100"},
+    )
 
-    inv = DeviceInventory(device_id=device.id, hostname="h", operating_system="Linux")
-    db.add(inv)
-    db.commit()
-    db.refresh(inv)
+    result = service.create_or_update_inventory(
+        user=user,
+        agent_id=device.agent_id,
+        inventory_data=updated_request,
+    )
 
-    fetched = service.get_inventory_by_device_id(device_id=device.id)
-    assert fetched is not None
-    assert fetched.id == inv.id
+    assert result.id == initial.id
+    assert result.device_id == device.id
+    assert result.hostname == "endpoint-02"
+    assert result.cpu_cores == 16
+    assert result.total_memory_mb == 32768
+    assert result.total_disk_mb == 1024000
+    assert result.cpu_info == updated_request.cpu_info
+    assert result.ram_info == updated_request.ram_info
+    assert result.disk_info == updated_request.disk_info
+    assert result.network_interfaces == updated_request.network_interfaces
+    assert result.operating_system_info == updated_request.operating_system_info
+    assert db.scalar(select(DeviceInventory).where(DeviceInventory.device_id == device.id)) is not None
+    assert len(db.scalars(select(DeviceInventory)).all()) == 1
+
+
+def test_update_inventory_preserves_device_association() -> None:
+    db = _create_in_memory_session()
+    user = _create_user(db, "association")
+    device = _create_device(db, user)
+    service = DeviceInventoryService(db)
+
+    initial = service.create_or_update_inventory(
+        user=user,
+        agent_id=device.agent_id,
+        inventory_data=_inventory_request(),
+    )
+    updated = service.create_or_update_inventory(
+        user=user,
+        agent_id=device.agent_id,
+        inventory_data=_inventory_request(hostname="updated-host"),
+    )
+
+    assert updated.id == initial.id
+    assert updated.device_id == device.id
+
+
+def test_get_inventory_by_device_id_returns_inventory() -> None:
+    db = _create_in_memory_session()
+    user = _create_user(db, "device_lookup")
+    device = _create_device(db, user)
+    service = DeviceInventoryService(db)
+    created = service.create_or_update_inventory(
+        user=user,
+        agent_id=device.agent_id,
+        inventory_data=_inventory_request(),
+    )
+
+    result = service.get_inventory_by_device_id(device_id=device.id)
+
+    assert result is not None
+    assert result.id == created.id
+
+
+def test_get_inventory_by_device_id_returns_none_when_missing() -> None:
+    db = _create_in_memory_session()
+    user = _create_user(db, "device_missing")
+    device = _create_device(db, user)
+
+    result = DeviceInventoryService(db).get_inventory_by_device_id(device_id=device.id)
+
+    assert result is None
+
+
+def test_get_inventory_by_agent_id_returns_inventory() -> None:
+    db = _create_in_memory_session()
+    user = _create_user(db, "agent_lookup")
+    device = _create_device(db, user)
+    service = DeviceInventoryService(db)
+    created = service.create_or_update_inventory(
+        user=user,
+        agent_id=device.agent_id,
+        inventory_data=_inventory_request(),
+    )
+
+    result = service.get_inventory_by_agent_id(user=user, agent_id=device.agent_id)
+
+    assert result is not None
+    assert result.id == created.id
+
+
+def test_get_inventory_by_agent_id_returns_none_when_inventory_missing() -> None:
+    db = _create_in_memory_session()
+    user = _create_user(db, "agent_missing")
+    device = _create_device(db, user)
+
+    result = DeviceInventoryService(db).get_inventory_by_agent_id(
+        user=user,
+        agent_id=device.agent_id,
+    )
+
+    assert result is None
+
+
+def test_get_inventory_by_agent_id_raises_for_unknown_device() -> None:
+    db = _create_in_memory_session()
+    user = _create_user(db, "unknown_agent")
+
+    with pytest.raises(DeviceNotFoundError):
+        DeviceInventoryService(db).get_inventory_by_agent_id(user=user, agent_id=uuid4())
+
+
+def test_get_inventory_by_agent_id_raises_on_ownership_violation() -> None:
+    db = _create_in_memory_session()
+    owner = _create_user(db, "inventory_owner")
+    other = _create_user(db, "inventory_other")
+    device = _create_device(db, owner)
+
+    with pytest.raises(DeviceOwnershipError):
+        DeviceInventoryService(db).get_inventory_by_agent_id(
+            user=other,
+            agent_id=device.agent_id,
+        )
