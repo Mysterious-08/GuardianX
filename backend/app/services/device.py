@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
-from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -15,6 +15,7 @@ from app.schemas.heartbeat import HeartbeatRequest, HeartbeatResponse
 
 # Heartbeat interval returned to agents (seconds).
 HEARTBEAT_INTERVAL_SECONDS = 30
+OFFLINE_THRESHOLD = timedelta(seconds=90)
 
 
 class DeviceService:
@@ -32,6 +33,68 @@ class DeviceService:
         """Retrieve a device by `agent_id`, returning ``None`` when absent."""
         statement = select(Device).where(Device.agent_id == agent_id)
         return self.db.scalar(statement)
+
+    def evaluate_device_status(
+        self,
+        *,
+        device: Device,
+        now: datetime | None = None,
+    ) -> Device:
+        """Evaluate normal availability state from ``last_seen``."""
+        current_time = now or datetime.now(timezone.utc)
+        availability_states = {
+            DeviceStatus.REGISTERED,
+            DeviceStatus.ONLINE,
+            DeviceStatus.OFFLINE,
+        }
+
+        if device.last_seen is None:
+            if device.status in availability_states:
+                device.status = DeviceStatus.REGISTERED
+            return device
+
+        last_seen = device.last_seen
+        if last_seen.tzinfo is None:
+            last_seen = last_seen.replace(tzinfo=timezone.utc)
+
+        if current_time - last_seen > OFFLINE_THRESHOLD:
+            if device.status in (DeviceStatus.REGISTERED, DeviceStatus.ONLINE):
+                device.status = DeviceStatus.OFFLINE
+        elif device.status in (DeviceStatus.REGISTERED, DeviceStatus.OFFLINE):
+            device.status = DeviceStatus.ONLINE
+
+        return device
+
+    def get_devices_by_user(
+        self,
+        *,
+        user: User,
+        now: datetime | None = None,
+    ) -> list[Device]:
+        """Return the user's devices after evaluating their current availability."""
+        statement = select(Device).where(Device.user_id == user.id).order_by(Device.created_at)
+        devices = list(self.db.scalars(statement).all())
+        previous_statuses = {device.id: device.status for device in devices}
+
+        for device in devices:
+            self.evaluate_device_status(device=device, now=now)
+
+        changed_devices = [
+            device
+            for device in devices
+            if device.status != previous_statuses[device.id]
+        ]
+        if not changed_devices:
+            return devices
+
+        try:
+            self.db.commit()
+            for device in changed_devices:
+                self.db.refresh(device)
+            return devices
+        except Exception:
+            self.db.rollback()
+            raise
 
     def register_or_update_device(
         self,

@@ -2,7 +2,7 @@
 
 ## Current Version
 
-**v0.0.7**
+**v0.0.9**
 
 ---
 
@@ -99,7 +99,7 @@
 ### Device Management
 
 * [x] Device inventory collection
-* [ ] Automatic online/offline status monitoring
+* [x] Automatic online/offline status monitoring
 * [ ] Device dashboard APIs
 
 ---
@@ -179,6 +179,7 @@
 * ✅ **v0.0.6** - Device Management Foundation (Device registration, heartbeat endpoint, centralized exception handling, device ownership validation, Swagger verification, and end-to-end testing)
 * ✅ **v0.0.7** - Endpoint Visibility & Security Event Foundation (Device inventory collection, inventory ownership validation, security event ingestion/retrieval, security event ownership validation, API testing, and end-to-end verification)
 * ✅ **v0.0.8** - Device Inventory Collection (inventory model, migration, schemas, service, API endpoints, ownership validation, and automated testing)
+* ✅ **v0.0.9** - Automatic Online/Offline Status Monitoring (heartbeat-based online transition, 90-second stale-device detection, query-time offline status evaluation, protected device states, device list API, API testing, and Swagger verification)
 
 ---
 
@@ -200,20 +201,26 @@ Includes:
 - API integration tests
 - Full backend verification
 
-🎯 **Next Task:**
+✅ **Completed Task:**
 
 **Automatic Online/Offline Status Monitoring**
 
-The system should automatically determine the current availability of registered GuardianX devices based on heartbeat activity.
+Includes:
 
-Initial goals:
+- Heartbeat-based online status transition
+- `last_seen` tracking
+- 90-second offline threshold
+- Query-time stale-device detection
+- Persisted `OFFLINE` status for stale devices
+- Preservation of `REGISTERED` devices without heartbeat
+- Preservation of `ISOLATED`, `QUARANTINED`, and `UNINSTALLED` states
+- Authenticated `GET /devices` endpoint
+- Dedicated device status tests
+- Full backend test verification
+- Swagger verification
 
-- Track the device's `last_seen` timestamp.
-- Mark devices as `ONLINE` when valid heartbeat activity is received.
-- Detect devices that have stopped sending heartbeats.
-- Automatically mark inactive devices as `OFFLINE`.
-- Preserve existing device ownership and authorization rules.
-- Keep the monitoring mechanism lightweight.
-- Keep business logic inside the service layer.
-- Add automated tests for status transitions.
-- Verify the behavior through the API.
+🎯 **Next Task:**
+
+**Device Dashboard APIs**
+
+The dashboard APIs should expose device inventory, device status, heartbeat activity, and endpoint visibility data required by the GuardianX dashboard.

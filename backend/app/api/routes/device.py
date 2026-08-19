@@ -8,7 +8,7 @@ from app.api.dependencies import (
     DeviceInventoryServiceDep,
     SecurityEventServiceDep,
 )
-from app.schemas.device import DeviceRegisterRequest, DeviceResponse
+from app.schemas.device import DeviceListResponse, DeviceRegisterRequest, DeviceResponse
 from app.schemas.heartbeat import HeartbeatRequest, HeartbeatResponse
 from app.schemas.device_inventory import DeviceInventoryRequest, DeviceInventoryResponse
 from app.schemas.security_event import SecurityEventRequest, SecurityEventResponse
@@ -16,6 +16,20 @@ from app.security.dependencies import CurrentUserDep
 
 
 router = APIRouter(prefix="/devices", tags=["Devices"])
+
+
+@router.get(
+    "",
+    response_model=DeviceListResponse,
+    status_code=status.HTTP_200_OK,
+)
+def get_devices(
+    current_user: CurrentUserDep,
+    device_service: DeviceServiceDep,
+) -> DeviceListResponse:
+    """Return the authenticated user's devices with current availability status."""
+    devices = device_service.get_devices_by_user(user=current_user)
+    return DeviceListResponse(devices=devices, total=len(devices))
 
 
 @router.post(
