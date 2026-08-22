@@ -7,6 +7,7 @@ from fastapi import Depends
 from app.database.session import DBSessionDep
 from app.services.device import DeviceService
 from app.services.device_inventory import DeviceInventoryService
+from app.services.dashboard import DashboardService
 from app.services.security_event import SecurityEventService
 
 
@@ -29,6 +30,17 @@ def get_device_inventory_service(db: DBSessionDep) -> DeviceInventoryService:
 DeviceInventoryServiceDep = Annotated[
     DeviceInventoryService,
     Depends(get_device_inventory_service),
+]
+
+
+def get_dashboard_service(db: DBSessionDep) -> DashboardService:
+    """Provide a dashboard service instance for route handlers."""
+    return DashboardService(db=db)
+
+
+DashboardServiceDep = Annotated[
+    DashboardService,
+    Depends(get_dashboard_service),
 ]
 
 

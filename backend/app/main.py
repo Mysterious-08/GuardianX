@@ -7,6 +7,7 @@ from app.api.routes.auth import router as auth_router
 from app.core.config import settings
 from app.database.session import check_database_connection
 from app.api.routes.device import router as device_router
+from app.api.routes.dashboard import router as dashboard_router
 from app.exceptions.handlers import register_exception_handlers
 
 
@@ -28,6 +29,7 @@ register_exception_handlers(app)
 
 app.include_router(auth_router)
 app.include_router(device_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/")
