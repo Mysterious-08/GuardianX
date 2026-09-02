@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import pytest
 from scapy.layers.inet import IP, TCP, UDP
 from scapy.layers.inet6 import IPv6
 from scapy.layers.l2 import Ether
 
 from app.agent.collectors.network import NetworkTelemetryCollector
 from app.agent.collectors.scapy_windows import WindowsScapyPacketSource, packet_to_observation
+from app.agent.windows_capture import (
+    build_demo_completed_flow_record,
+    build_guardianx_v2_ml_detection,
+    validate_windows_capture_runtime,
+)
 
 
 def test_converts_ipv4_tcp_packet_and_timestamp() -> None:
@@ -115,3 +121,23 @@ def test_capture_forwards_observations_and_honors_configuration() -> None:
         "timeout": 10,
         "filter": "ip or ip6",
     }]
+
+
+def test_demo_flow_builds_v2_vector_and_inference_result() -> None:
+    record = build_demo_completed_flow_record()
+    vector = record.to_guardianx_v2_feature_vector()
+    detection = build_guardianx_v2_ml_detection(record)
+
+    assert vector == [2.0, 1.0, 2.0, 100.0, 500.0, 1.5, 300.0, 0.0]
+    assert detection["model"] == "guardianx_isolation_forest_v2"
+    assert detection["schema_version"] == "v2"
+    assert detection["prediction"] in (0, 1)
+    assert isinstance(detection["anomaly_score"], float)
+
+
+def test_windows_capture_runtime_guard_raises_for_non_windows_or_missing_adapter() -> None:
+    with pytest.raises(RuntimeError, match="not Windows"):
+        validate_windows_capture_runtime(current_os="posix")
+
+    with pytest.raises(RuntimeError, match="Npcap"):
+        validate_windows_capture_runtime(current_os="nt", interface_listing=lambda: [])
