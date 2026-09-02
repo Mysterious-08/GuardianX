@@ -230,6 +230,7 @@ def test_device_list_endpoint_returns_status_and_last_seen() -> None:
         body = response.json()
         assert body["total"] == 1
         assert body["devices"][0]["id"] == str(device.id)
+        assert body["devices"][0]["agent_id"] == str(device.agent_id)
         assert body["devices"][0]["status"] == "ONLINE"
         assert body["devices"][0]["last_seen"] is not None
     finally:
@@ -252,6 +253,7 @@ def test_device_list_endpoint_returns_only_owned_devices() -> None:
         body = response.json()
         assert body["total"] == 1
         assert body["devices"][0]["id"] == str(owned.id)
+        assert body["devices"][0]["agent_id"] == str(owned.agent_id)
     finally:
         app.dependency_overrides.clear()
 

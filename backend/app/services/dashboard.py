@@ -39,12 +39,16 @@ class DashboardService:
             default=None,
         )
         devices_with_inventory = sum(device.inventory is not None for device in devices)
+        uninitialized_devices = sum(
+            device.status is DeviceStatus.REGISTERED and device.last_seen is None
+            for device in devices
+        )
 
         return DashboardOverviewResponse(
             total_devices=len(devices),
             online_devices=statuses.count(DeviceStatus.ONLINE),
             offline_devices=statuses.count(DeviceStatus.OFFLINE),
-            registered_devices=statuses.count(DeviceStatus.REGISTERED),
+            registered_devices=uninitialized_devices,
             isolated_devices=statuses.count(DeviceStatus.ISOLATED),
             quarantined_devices=statuses.count(DeviceStatus.QUARANTINED),
             devices_with_inventory=devices_with_inventory,

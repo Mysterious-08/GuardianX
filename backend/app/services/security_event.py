@@ -29,6 +29,16 @@ class SecurityEventService:
         )
         return self.db.scalars(statement).all()
 
+    def get_events_by_user(self, *, user: User) -> list[SecurityEvent]:
+        """Return all events belonging to the user's devices, newest first."""
+        statement = (
+            select(SecurityEvent)
+            .join(Device, SecurityEvent.device_id == Device.id)
+            .where(Device.user_id == user.id)
+            .order_by(SecurityEvent.timestamp.desc())
+        )
+        return self.db.scalars(statement).all()
+
     def get_events_by_agent_id(self, *, user: User, agent_id: UUID) -> list[SecurityEvent]:
         """Find device by agent_id, verify ownership, and return its events.
 

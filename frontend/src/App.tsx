@@ -1,121 +1,123 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useCallback, useEffect, useState } from 'react'
 import './App.css'
+import { AuthProvider } from './auth/AuthContext'
+import { useAuth } from './auth/auth-context'
+import { AppShell } from './components/AppShell'
+import { LoadingState } from './components/LoadingState'
+import { LoginPage } from './features/auth/LoginPage'
+import { RegisterPage } from './features/auth/RegisterPage'
+import { DashboardPage } from './features/dashboard/DashboardPage'
+import { EndpointInventoryPage } from './features/devices/EndpointInventoryPage'
+import { EndpointPosturePage } from './features/devices/EndpointPosturePage'
+import { SecurityEventsPage } from './features/security-events/SecurityEventsPage'
+import type { ConsoleState, DeviceSummary } from './types/api'
 
-function App() {
-  const [count, setCount] = useState(0)
+function navigate(path: string): void {
+  window.history.pushState({}, '', path)
+  window.dispatchEvent(new PopStateEvent('popstate'))
+}
+
+function AuthenticatedApp() {
+  const { logout, user } = useAuth()
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [consoleState, setConsoleState] = useState<ConsoleState>('checking')
+  const [path, setPath] = useState(window.location.pathname)
+  const [selectedDevice, setSelectedDevice] = useState<DeviceSummary | null>(null)
+  const postureMatch = path.match(/^\/devices\/([^/]+)\/posture$/)
+  const isPosture = postureMatch !== null
+  const isSecurityEvents = path === '/security-events'
+  const goToLogin = useCallback(() => {
+    logout()
+    navigate('/login')
+  }, [logout])
+
+  useEffect(() => {
+    const handlePopState = () => setPath(window.location.pathname)
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  if (!user) return null
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <AppShell
+      consoleState={consoleState}
+      description={isSecurityEvents ? 'Security activity across GuardianX-managed endpoints' : isPosture ? 'Device health, inventory, and security activity' : path === '/devices' ? 'GuardianX-managed endpoint inventory' : 'Endpoint visibility and security status'}
+      isRefreshing={isRefreshing}
+      onLogout={goToLogin}
+      onNavigate={navigate}
+      onRefresh={() => setRefreshSignal((signal) => signal + 1)}
+      title={isSecurityEvents ? 'Security Events' : isPosture ? 'Endpoint Posture' : path === '/devices' ? 'Endpoint Inventory' : 'Overview'}
+      username={user.username}
+    >
+      {isSecurityEvents ? (
+        <SecurityEventsPage
+          onLoadingChange={setIsRefreshing}
+          onConsoleStateChange={setConsoleState}
+          onSessionExpired={goToLogin}
+          refreshSignal={refreshSignal}
+        />
+      ) : isPosture ? (
+        <EndpointPosturePage
+          agentId={postureMatch[1]}
+          device={selectedDevice}
+          onBack={() => navigate('/devices')}
+          onLoadingChange={setIsRefreshing}
+          onConsoleStateChange={setConsoleState}
+          onSessionExpired={goToLogin}
+          refreshSignal={refreshSignal}
+        />
+      ) : path === '/devices' ? (
+        <EndpointInventoryPage
+          refreshSignal={refreshSignal}
+          onLoadingChange={setIsRefreshing}
+          onConsoleStateChange={setConsoleState}
+          onSessionExpired={goToLogin}
+          onSelectDevice={(device) => {
+            setSelectedDevice(device)
+            navigate(`/devices/${device.agent_id}/posture`)
+          }}
+        />
+      ) : (
+        <DashboardPage
+          refreshSignal={refreshSignal}
+          onLoadingChange={setIsRefreshing}
+          onConsoleStateChange={setConsoleState}
+          onSessionExpired={goToLogin}
+        />
+      )}
+    </AppShell>
+  )
+}
 
-      <div className="ticks"></div>
+function RoutedApp() {
+  const { status } = useAuth()
+  const [path, setPath] = useState(window.location.pathname)
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+  useEffect(() => {
+    const handlePopState = () => setPath(window.location.pathname)
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+  useEffect(() => {
+    if (status === 'loading') return
+    if (status === 'authenticated' && path !== '/dashboard' && path !== '/devices' && path !== '/security-events' && !/^\/devices\/[^/]+\/posture$/.test(path)) navigate('/dashboard')
+    if (status === 'unauthenticated' && path !== '/login' && path !== '/register') navigate('/login')
+  }, [path, status])
+
+  if (status === 'loading') return <LoadingState />
+  if (status === 'unauthenticated' && path === '/register') return <RegisterPage onNavigate={navigate} />
+  if (status === 'unauthenticated') return <LoginPage onNavigate={navigate} registrationComplete={window.location.search.includes('registered=1')} />
+  return <AuthenticatedApp />
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <RoutedApp />
+    </AuthProvider>
   )
 }
 

@@ -93,6 +93,7 @@ class DeviceSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    agent_id: UUID
     device_name: str | None = None
     hostname: str
     status: DeviceStatus

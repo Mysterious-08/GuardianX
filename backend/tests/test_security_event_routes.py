@@ -14,6 +14,7 @@ from app.database.session import get_db
 from app.security.dependencies import get_current_user
 from app.models.user import User
 from app.models.device import Device
+from app.models.security_event import SecurityEvent, SecurityEventSeverity, SecurityEventType
 
 
 def _create_in_memory_session():
@@ -43,6 +44,26 @@ def _override_user(user):
         return user
 
     return _get_user
+
+
+def _configure_overrides(db, user) -> None:
+    app.dependency_overrides[get_db] = _override_db(db)
+    app.dependency_overrides[get_current_user] = _override_user(user)
+
+
+def _create_event(db, device: Device, timestamp: datetime, *, source: str = "test") -> SecurityEvent:
+    event = SecurityEvent(
+        device_id=device.id,
+        event_type=SecurityEventType.PROCESS,
+        severity=SecurityEventSeverity.INFO,
+        source=source,
+        timestamp=timestamp,
+        payload={"source": source},
+    )
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return event
 
 
 def test_create_event_endpoint_success() -> None:
@@ -280,3 +301,62 @@ def test_invalid_payload_returns_422() -> None:
         assert resp.status_code == 422
     finally:
         app.dependency_overrides.clear()
+
+
+def test_get_all_security_events_returns_owned_events_newest_first() -> None:
+    db = _create_in_memory_session()
+    owner = User(username="all_events_owner", email="all_events_owner@example.com", hashed_password="x")
+    other = User(username="all_events_other", email="all_events_other@example.com", hashed_password="x")
+    db.add_all([owner, other])
+    db.commit()
+    db.refresh(owner)
+    db.refresh(other)
+    owned_device = Device(agent_id=uuid4(), user_id=owner.id, hostname="owned", operating_system="Windows")
+    other_device = Device(agent_id=uuid4(), user_id=other.id, hostname="other", operating_system="Windows")
+    db.add_all([owned_device, other_device])
+    db.commit()
+    db.refresh(owned_device)
+    db.refresh(other_device)
+    newer = _create_event(db, owned_device, datetime(2026, 8, 16, 11, 0, tzinfo=timezone.utc), source="newer")
+    _create_event(db, owned_device, datetime(2026, 8, 16, 9, 0, tzinfo=timezone.utc), source="older")
+    _create_event(db, other_device, datetime(2026, 8, 16, 12, 0, tzinfo=timezone.utc), source="excluded")
+    _configure_overrides(db, owner)
+    client = TestClient(app)
+
+    try:
+        response = client.get("/security-events")
+
+        assert response.status_code == 200
+        events = response.json()
+        assert [event["source"] for event in events] == ["newer", "older"]
+        assert events[0]["id"] == str(newer.id)
+        assert events[0]["device_id"] == str(owned_device.id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_all_security_events_returns_empty_list_when_no_events_exist() -> None:
+    db = _create_in_memory_session()
+    user = User(username="empty_events", email="empty_events@example.com", hashed_password="x")
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    _configure_overrides(db, user)
+    client = TestClient(app)
+
+    try:
+        response = client.get("/security-events")
+
+        assert response.status_code == 200
+        assert response.json() == []
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_all_security_events_requires_authentication() -> None:
+    app.dependency_overrides.clear()
+    client = TestClient(app)
+
+    response = client.get("/security-events")
+
+    assert response.status_code == 401

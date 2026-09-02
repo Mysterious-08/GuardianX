@@ -2,7 +2,7 @@
 
 ## Current Version
 
-**v0.0.9**
+**v0.1.0**
 
 ---
 
@@ -92,27 +92,27 @@
 * [x] Create Security Event tests
 * [x] Verify complete backend test suite
 
----
-
-## In Progress 🔄
-
 ### Device Management
 
 * [x] Device inventory collection
 * [x] Automatic online/offline status monitoring
-* [ ] Device dashboard APIs
+* [x] Device dashboard APIs
 
 ---
 
-## Pending ⏳
+## In Progress 🔄
 
-### Dashboard
+### Dashboard Frontend
 
 * [ ] Dashboard layout
 * [ ] Sidebar
 * [ ] Header
 * [ ] Status cards
+* [ ] Device overview
+* [ ] Device status visualization
 * [ ] API integration
+
+## Pending ⏳
 
 ### Endpoint Agent
 
@@ -122,6 +122,29 @@
 * [ ] File monitoring
 * [ ] Registry monitoring
 * [ ] Network monitoring
+
+### Network Flow Aggregation Milestone
+
+* [x] Add metadata-only packet observation input
+* [x] Aggregate bidirectional flows with fixed direction
+* [x] Derive flow duration, packet rate, byte rate, and packet ratio
+* [x] Complete flows on TCP FIN/RST, idle timeout, maximum lifetime, and shutdown
+* [x] Convert completed flows to draft `NETWORK` SecurityEvent payloads
+* [x] Add synthetic packet aggregation tests
+
+This milestone is **DRAFT / UNLOCKED** and does not complete Windows network
+monitoring. It adds no live packet-capture source, Windows service, database
+change, ML code, dataset processing, or model artifact. Provisional defaults are
+120 seconds for idle timeout and 3600 seconds for maximum flow lifetime.
+
+### Windows Scapy Packet-Source Adapter Milestone
+
+* [x] Convert supported IPv4/IPv6 TCP and UDP Scapy packets to `PacketObservation`
+* [x] Forward bounded Scapy capture observations to `NetworkTelemetryCollector`
+* [x] Add synthetic Scapy packet conversion tests without live capture
+
+This milestone does not complete Windows network monitoring. Live agent/runtime
+integration, service lifecycle, and event delivery remain later work.
 
 ### Threat Intelligence
 
@@ -147,6 +170,26 @@
 * [ ] Incident reports
 * [ ] Dashboard analytics
 * [ ] PDF generation
+
+### Latest Completed Task
+
+**Network Flow Aggregation Milestone**
+
+Verification:
+
+- Network collector tests: 11 passed
+- Full backend test suite: 88 passed
+
+Remaining limitation:
+
+- A future Windows-compatible packet source must feed `PacketObservation` values
+	into the collector; capture privileges and any external capture dependency
+	remain to be evaluated.
+
+Next task:
+
+- Design and verify the Windows packet source/agent integration without locking
+	the draft telemetry contract.
 
 ---
 
@@ -180,6 +223,7 @@
 * ✅ **v0.0.7** - Endpoint Visibility & Security Event Foundation (Device inventory collection, inventory ownership validation, security event ingestion/retrieval, security event ownership validation, API testing, and end-to-end verification)
 * ✅ **v0.0.8** - Device Inventory Collection (inventory model, migration, schemas, service, API endpoints, ownership validation, and automated testing)
 * ✅ **v0.0.9** - Automatic Online/Offline Status Monitoring (heartbeat-based online transition, 90-second stale-device detection, query-time offline status evaluation, protected device states, device list API, API testing, and Swagger verification)
+* ✅ **v0.1.0** - Device Dashboard APIs (authenticated dashboard overview endpoint, device status aggregation, inventory visibility, security event totals, latest device activity, ownership scoping, automated tests, and full backend verification)
 
 ---
 
@@ -187,40 +231,34 @@
 
 ✅ **Completed Task:**
 
-**Device Inventory Collection**
+**Device Dashboard APIs**
 
 Includes:
 
-- Device inventory database model
-- Inventory schema validation
-- Inventory persistence service
-- Create/update inventory behavior
-- Device ownership validation
-- GET inventory API
-- POST inventory API
-- API integration tests
-- Full backend verification
-
-✅ **Completed Task:**
-
-**Automatic Online/Offline Status Monitoring**
-
-Includes:
-
-- Heartbeat-based online status transition
-- `last_seen` tracking
-- 90-second offline threshold
-- Query-time stale-device detection
-- Persisted `OFFLINE` status for stale devices
-- Preservation of `REGISTERED` devices without heartbeat
-- Preservation of `ISOLATED`, `QUARANTINED`, and `UNINSTALLED` states
-- Authenticated `GET /devices` endpoint
-- Dedicated device status tests
+- Authenticated dashboard overview endpoint
+- Device status aggregation
+- Online/offline/registered device counts
+- Isolated and quarantined device counts
+- Device inventory visibility
+- Security event totals
+- Latest device activity
+- User/device ownership scoping
+- Dashboard service layer
+- Dashboard response schema
+- Dashboard route
+- Automated dashboard service tests
+- Automated dashboard route tests
 - Full backend test verification
-- Swagger verification
+
+**Verification:**
+
+- Dashboard tests: 10 passed
+- Full backend test suite: 71 passed
+- Swagger/API verification completed
+- Commit: `ef567c4`
 
 🎯 **Next Task:**
 
-**Device Dashboard APIs**
+**Dashboard Frontend**
 
-The dashboard APIs should expose device inventory, device status, heartbeat activity, and endpoint visibility data required by the GuardianX dashboard.
+The React dashboard should consume the existing dashboard APIs and provide the initial GuardianX operator interface, including the dashboard layout, sidebar, header, status cards, device overview, and device status visualization.

@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = Field(default="HS256")
     JWT_ISSUER: str = Field(default="GuardianX")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30)
+    CORS_ORIGINS: str = Field(
+        default="http://localhost:5173,http://127.0.0.1:5173"
+    )
     DATABASE_URL: str = Field(
         default="postgresql+psycopg://guardianx:guardianx@localhost:5432/guardianx")
     model_config = SettingsConfigDict(
@@ -22,6 +25,11 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        """Return configured browser origins without empty values or whitespace."""
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
 
 settings = Settings()

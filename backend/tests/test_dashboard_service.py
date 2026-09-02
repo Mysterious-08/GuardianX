@@ -112,6 +112,19 @@ def test_overview_counts_device_statuses() -> None:
     assert result.quarantined_devices == 1
 
 
+def test_overview_counts_only_never_seen_registered_devices_as_uninitialized() -> None:
+    db = _create_in_memory_session()
+    user = _create_user(db, "dashboard_uninitialized")
+    now = datetime.now(timezone.utc)
+    _create_device(db, user, status=DeviceStatus.REGISTERED)
+    _create_device(db, user, status=DeviceStatus.REGISTERED, last_seen=now)
+
+    result = DashboardService(db).get_overview(user=user)
+
+    assert result.registered_devices == 1
+    assert result.online_devices == 1
+
+
 def test_overview_counts_inventory_and_missing_inventory() -> None:
     db = _create_in_memory_session()
     user = _create_user(db, "dashboard_inventory")

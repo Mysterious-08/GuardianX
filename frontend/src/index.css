@@ -30,6 +30,35 @@
   }
 }
 
+:root {
+  font-family: "Aptos", "Segoe UI", sans-serif;
+  color: #dce5ec;
+  background: #080d12;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-width: 1024px;
+  min-height: 100vh;
+  margin: 0;
+  background-color: #080d12;
+  background-image: linear-gradient(rgba(33, 52, 65, 0.14) 1px, transparent 1px), linear-gradient(90deg, rgba(33, 52, 65, 0.14) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+button { font: inherit; }
+
+button:focus-visible {
+  outline: 2px solid #65b9a4;
+  outline-offset: 3px;
+}
+
+#root { min-height: 100vh; }
+
 @media (prefers-color-scheme: dark) {
   :root {
     --text: #9ca3af;

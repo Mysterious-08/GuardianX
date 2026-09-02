@@ -2,12 +2,14 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.auth import router as auth_router
 from app.core.config import settings
 from app.database.session import check_database_connection
 from app.api.routes.device import router as device_router
 from app.api.routes.dashboard import router as dashboard_router
+from app.api.routes.security_events import router as security_events_router
 from app.exceptions.handlers import register_exception_handlers
 
 
@@ -24,12 +26,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origin_list,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Accept", "Authorization", "Content-Type"],
+)
+
 # Register centralized exception handlers for domain errors.
 register_exception_handlers(app)
 
 app.include_router(auth_router)
 app.include_router(device_router)
 app.include_router(dashboard_router)
+app.include_router(security_events_router)
 
 
 @app.get("/")

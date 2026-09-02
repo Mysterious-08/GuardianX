@@ -165,3 +165,35 @@ def test_dashboard_overview_rejects_unauthenticated_access() -> None:
     response = client.get("/dashboard/overview")
 
     assert response.status_code == 401
+
+
+def test_dashboard_api_allows_local_frontend_preflight() -> None:
+    client = TestClient(app)
+
+    response = client.options(
+        "/dashboard/overview",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "Authorization",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "GET" in response.headers["access-control-allow-methods"]
+    assert "Authorization" in response.headers["access-control-allow-headers"]
+
+
+def test_dashboard_api_rejects_unconfigured_frontend_origin() -> None:
+    client = TestClient(app)
+
+    response = client.options(
+        "/dashboard/overview",
+        headers={
+            "Origin": "http://malicious.example",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+
+    assert "access-control-allow-origin" not in response.headers
