@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError } from '../../api/client'
 import { getDashboardOverview } from '../../api/dashboard'
+import { getDevices } from '../../api/devices'
+import { getSecurityEvents } from '../../api/securityEvents'
 import { ErrorState } from '../../components/ErrorState'
 import { LoadingState } from '../../components/LoadingState'
-import type { ConsoleState, DashboardOverview } from '../../types/api'
+import type { ConsoleState, DashboardOverview, DeviceSummary, SecurityEvent } from '../../types/api'
+import { BehavioralDetectionPanel } from './BehavioralDetectionPanel'
 import { DeviceActivity } from './DeviceActivity'
-import { DeviceStatusSummary } from './DeviceStatusSummary'
-import { InventoryCoverage } from './InventoryCoverage'
-import { OverviewMetric } from './OverviewMetric'
-import { SecurityEventSummary } from './SecurityEventSummary'
+import { EndpointCoverage } from './EndpointCoverage'
+import { OverviewHero } from './OverviewHero'
+import { SecurityEventStream } from './SecurityEventStream'
+import { SecurityPosture } from './SecurityPosture'
 
 interface DashboardPageProps {
   onConsoleStateChange: (state: ConsoleState) => void
@@ -19,6 +22,8 @@ interface DashboardPageProps {
 
 export function DashboardPage({ onConsoleStateChange, onLoadingChange, onSessionExpired, refreshSignal }: DashboardPageProps) {
   const [overview, setOverview] = useState<DashboardOverview | null>(null)
+  const [devices, setDevices] = useState<DeviceSummary[] | null>(null)
+  const [events, setEvents] = useState<SecurityEvent[] | null>(null)
   const [error, setError] = useState(false)
   const [authenticationRequired, setAuthenticationRequired] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -30,10 +35,19 @@ export function DashboardPage({ onConsoleStateChange, onLoadingChange, onSession
     onLoadingChange(true)
     onConsoleStateChange('checking')
     try {
-      setOverview(await getDashboardOverview())
+      const [overviewData, devicesData, eventsData] = await Promise.all([
+        getDashboardOverview(),
+        getDevices(),
+        getSecurityEvents(),
+      ])
+      setOverview(overviewData)
+      setDevices(devicesData.devices)
+      setEvents(eventsData)
       onConsoleStateChange('authenticated')
     } catch (caughtError) {
       setOverview(null)
+      setDevices(null)
+      setEvents(null)
       setError(true)
       const requiresAuthentication = caughtError instanceof ApiError && caughtError.status === 401
       setAuthenticationRequired(requiresAuthentication)
@@ -45,12 +59,17 @@ export function DashboardPage({ onConsoleStateChange, onLoadingChange, onSession
     }
   }, [onConsoleStateChange, onLoadingChange, onSessionExpired])
 
+  const openSecurityEvents = useCallback(() => {
+    window.history.pushState({}, '', '/security-events')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  }, [])
+
   useEffect(() => {
     queueMicrotask(() => void loadDashboard())
   }, [loadDashboard, refreshSignal])
 
   if (isLoading && !overview) return <LoadingState />
-  if (error || !overview) {
+  if (error || !overview || !devices || !events) {
     return <ErrorState authenticationRequired={authenticationRequired} onRetry={() => void loadDashboard()} />
   }
 
@@ -67,22 +86,32 @@ export function DashboardPage({ onConsoleStateChange, onLoadingChange, onSession
     )
   }
 
+  const criticalEvents = events.filter((event) => event.severity === 'CRITICAL').length
+
   return (
     <div className="dashboard-content">
-      <section className="metric-grid" aria-label="Device metrics">
-        <OverviewMetric label="Total devices" value={overview.total_devices} />
-        <OverviewMetric label="Online" value={overview.online_devices} tone="success" />
-        <OverviewMetric label="Offline" value={overview.offline_devices} tone="warning" />
-        <OverviewMetric label="Uninitialized" value={overview.registered_devices} />
-        <OverviewMetric label="Isolated" value={overview.isolated_devices} tone="warning" />
-        <OverviewMetric label="Quarantined" value={overview.quarantined_devices} tone="critical" />
-      </section>
-      <section className="content-grid">
-        <DeviceStatusSummary overview={overview} />
-        <InventoryCoverage overview={overview} />
-        <SecurityEventSummary total={overview.total_security_events} />
+      <OverviewHero
+        totalDevices={overview.total_devices}
+        onlineDevices={overview.online_devices}
+        offlineDevices={overview.offline_devices}
+        totalEvents={overview.total_security_events}
+        latestActivity={overview.latest_device_activity}
+      />
+
+      <div className="overview-grid">
+        <SecurityPosture
+          totalDevices={overview.total_devices}
+          onlineDevices={overview.online_devices}
+          offlineDevices={overview.offline_devices}
+          totalEvents={overview.total_security_events}
+          criticalEvents={criticalEvents}
+        />
+
+        <EndpointCoverage overview={overview} />
+        <SecurityEventStream events={events} devices={devices} onOpenSecurityEvents={openSecurityEvents} />
+        <BehavioralDetectionPanel events={events} />
         <DeviceActivity latestActivity={overview.latest_device_activity} />
-      </section>
+      </div>
     </div>
   )
 }
