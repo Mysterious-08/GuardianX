@@ -64,6 +64,26 @@ export interface DeviceInventory {
 export type SecurityEventType = 'PROCESS' | 'FILE' | 'REGISTRY' | 'NETWORK' | 'SYSTEM'
 export type SecurityEventSeverity = 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
 
+export type GuardianXFeatureKey =
+  | 'flow_duration'
+  | 'forward_packet_count'
+  | 'backward_packet_count'
+  | 'forward_byte_count'
+  | 'backward_byte_count'
+  | 'packet_rate'
+  | 'byte_rate'
+  | 'is_one_way_flow'
+
+export type SecurityEventMlFeatures = Partial<Record<GuardianXFeatureKey, number | boolean>>
+
+export interface SecurityEventMlDetection {
+  model: string
+  schema_version: string
+  prediction: number
+  anomaly_score: number
+  features?: SecurityEventMlFeatures
+}
+
 export interface SecurityEvent {
   id: string
   device_id: string
@@ -71,7 +91,9 @@ export interface SecurityEvent {
   severity: SecurityEventSeverity
   source: string
   timestamp: string
-  payload: Record<string, unknown>
+  payload: Record<string, unknown> & {
+    ml_detection?: SecurityEventMlDetection
+  }
   created_at: string
 }
 
