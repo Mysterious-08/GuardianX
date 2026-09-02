@@ -14,7 +14,7 @@ export function Header({ consoleState, description, isRefreshing, onLogout, onRe
   return (
     <header className="topbar">
       <div>
-        <p className="eyebrow">GuardianX console</p>
+        <p className="eyebrow">Intelligence core</p>
         <h1>{title}</h1>
         <p className="header-subtitle">{description}</p>
       </div>

@@ -7,14 +7,9 @@ interface SidebarProps {
 }
 
 const navigationItems = [
-  'Overview',
-  'Endpoints',
-  'Security Events',
-  'Threat Intelligence',
-  'Response',
-  'Recovery Vault',
-  'Reports',
-  'Settings',
+  { label: 'Overview', path: '/dashboard' },
+  { label: 'Endpoints', path: '/devices' },
+  { label: 'Security Events', path: '/security-events' },
 ]
 
 export function Sidebar({ activeItem, consoleState, onNavigate }: SidebarProps) {
@@ -31,27 +26,24 @@ export function Sidebar({ activeItem, consoleState, onNavigate }: SidebarProps) 
         <span className="brand-mark" aria-hidden="true">GX</span>
         <div>
           <strong>GuardianX</strong>
-          <span>Endpoint defense</span>
+          <span>AI-POWERED ENDPOINT SECURITY</span>
         </div>
       </div>
 
-      <nav className="nav-list">
-        <p className="nav-heading">Workspace</p>
+      <nav className="nav-list" aria-label="GuardianX sections">
+        <p className="nav-heading">Command center</p>
         {navigationItems.map((item) => {
-          const isActive = item === activeItem
-          const isSupported = item === 'Overview' || item === 'Endpoints' || item === 'Security Events'
+          const isActive = item.label === activeItem
           return (
             <button
               className={`nav-item${isActive ? ' nav-item-active' : ''}`}
-              disabled={!isSupported}
-              key={item}
+              key={item.label}
               type="button"
               aria-current={isActive ? 'page' : undefined}
-              title={isSupported ? undefined : `${item} is not available in this milestone`}
-              onClick={() => onNavigate(item === 'Overview' ? '/dashboard' : item === 'Endpoints' ? '/devices' : '/security-events')}
+              onClick={() => onNavigate(item.path)}
             >
               <span className="nav-indicator" aria-hidden="true" />
-              {item}
+              {item.label}
             </button>
           )
         })}
