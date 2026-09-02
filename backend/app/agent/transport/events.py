@@ -65,6 +65,7 @@ class SecurityEventTransport:
             "schema_version": ML_SCHEMA_VERSION,
             "prediction": result.prediction,
             "anomaly_score": result.anomaly_score,
+            "features": record.to_guardianx_v2_feature_map(),
         }
 
     def publish(self, record: CompletedFlowRecord) -> None:

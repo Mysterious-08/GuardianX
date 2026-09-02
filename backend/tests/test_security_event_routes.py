@@ -116,12 +116,23 @@ def test_network_flow_transport_post_contains_guardianx_v2_ml_detection_and_pers
     inference = GuardianXInference(
         "D:/VScode/Projects/GuardianX/backend/ml/models/guardianx_isolation_forest_v2.joblib"
     )
-    expected = inference.predict(record.to_guardianx_v2_feature_vector())
+    vector = record.to_guardianx_v2_feature_vector()
+    expected = inference.predict(vector)
     expected_ml = {
         "model": "guardianx_isolation_forest_v2",
         "schema_version": "v2",
         "prediction": expected.prediction,
         "anomaly_score": expected.anomaly_score,
+        "features": {
+            "flow_duration": vector[0],
+            "forward_packet_count": vector[1],
+            "backward_packet_count": vector[2],
+            "forward_byte_count": vector[3],
+            "backward_byte_count": vector[4],
+            "packet_rate": vector[5],
+            "byte_rate": vector[6],
+            "is_one_way_flow": vector[7],
+        },
     }
 
     def fake_post(url: str, *, json: object, headers: dict[str, str], timeout: float):
@@ -154,6 +165,17 @@ def test_network_flow_transport_post_contains_guardianx_v2_ml_detection_and_pers
         assert payload["forward_packet_count"] == 1
         assert payload["backward_packet_count"] == 0
         assert payload["ml_detection"] == expected_ml
+        assert set(payload["ml_detection"]["features"]) == {
+            "flow_duration",
+            "forward_packet_count",
+            "backward_packet_count",
+            "forward_byte_count",
+            "backward_byte_count",
+            "packet_rate",
+            "byte_rate",
+            "is_one_way_flow",
+        }
+        assert payload["ml_detection"]["features"]["is_one_way_flow"] == 1
 
         persisted = db.scalar(
             select(SecurityEvent).where(SecurityEvent.device_id == device.id)

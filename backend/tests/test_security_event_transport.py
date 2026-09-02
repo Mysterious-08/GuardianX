@@ -151,11 +151,33 @@ def test_publish_adds_ml_detection_payload() -> None:
         ).publish(record)
 
     payload = mock_post.call_args.kwargs["json"]["payload"]
+    vector = record.to_guardianx_v2_feature_vector()
+    expected_features = {
+        "flow_duration": vector[0],
+        "forward_packet_count": vector[1],
+        "backward_packet_count": vector[2],
+        "forward_byte_count": vector[3],
+        "backward_byte_count": vector[4],
+        "packet_rate": vector[5],
+        "byte_rate": vector[6],
+        "is_one_way_flow": vector[7],
+    }
     assert payload["ml_detection"] == {
         "model": "guardianx_isolation_forest_v2",
         "schema_version": "v2",
         "prediction": 1,
         "anomaly_score": 0.018434047010596033,
+        "features": expected_features,
+    }
+    assert set(payload["ml_detection"]["features"]) == {
+        "flow_duration",
+        "forward_packet_count",
+        "backward_packet_count",
+        "forward_byte_count",
+        "backward_byte_count",
+        "packet_rate",
+        "byte_rate",
+        "is_one_way_flow",
     }
 
 
@@ -211,6 +233,7 @@ def test_invalid_feature_data_is_handled_explicitly_without_fabricating_ml_outpu
 
     payload = mock_post.call_args.kwargs["json"]["payload"]
     assert "ml_detection" not in payload
+    assert "features" not in payload
 
 
 def test_http_error_is_wrapped_as_event_transport_error() -> None:

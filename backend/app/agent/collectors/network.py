@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Callable, Iterable
 
+from app.ml.inference import EXPECTED_FEATURES
 from app.models.security_event import SecurityEventType, SecurityEventSeverity
 from app.schemas.security_event import SecurityEventRequest
 
@@ -166,6 +167,14 @@ class CompletedFlowRecord:
             raise ValueError("CompletedFlowRecord contains non-finite GuardianX v2 feature values.")
 
         return vector
+
+    def to_guardianx_v2_feature_map(self) -> dict[str, float]:
+        """Return the canonical v2 feature map using the exact inference vector values."""
+        vector = self.to_guardianx_v2_feature_vector()
+        return {
+            feature_name: value
+            for feature_name, value in zip(EXPECTED_FEATURES, vector)
+        }
 
 
 @dataclass

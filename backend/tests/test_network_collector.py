@@ -123,6 +123,37 @@ def test_one_way_flow_sets_is_one_way_flow_to_one() -> None:
     assert record.to_guardianx_v2_feature_vector()[-1] == 1.0
 
 
+def test_feature_map_matches_the_exact_inference_vector() -> None:
+    aggregator = BidirectionalFlowAggregator()
+    aggregator.observe(packet(1.0, 4000, 443, 10))
+    aggregator.observe(packet(2.0, 443, 4000, 20, source_ip="10.0.0.2", destination_ip="10.0.0.1"))
+
+    record = aggregator.flush()[0]
+    vector = record.to_guardianx_v2_feature_vector()
+    expected = {
+        "flow_duration": vector[0],
+        "forward_packet_count": vector[1],
+        "backward_packet_count": vector[2],
+        "forward_byte_count": vector[3],
+        "backward_byte_count": vector[4],
+        "packet_rate": vector[5],
+        "byte_rate": vector[6],
+        "is_one_way_flow": vector[7],
+    }
+
+    assert record.to_guardianx_v2_feature_map() == expected
+    assert expected["is_one_way_flow"] == 0
+
+    one_way = BidirectionalFlowAggregator()
+    one_way.observe(packet(1.0, 4000, 443, 10))
+    one_way.observe(packet(3.0, 4000, 443, 30))
+    one_way_record = one_way.flush()[0]
+
+    one_way_map = one_way_record.to_guardianx_v2_feature_map()
+    assert one_way_map["backward_packet_count"] == 0
+    assert one_way_map["is_one_way_flow"] == 1
+
+
 def test_invalid_duration_does_not_produce_infinity_or_nan() -> None:
     aggregator = BidirectionalFlowAggregator()
     aggregator.observe(packet(5.0, 4000, 443, 10))
