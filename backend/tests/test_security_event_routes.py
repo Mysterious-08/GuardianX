@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from uuid import uuid4
+from unittest.mock import patch
 
+import httpx
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -15,6 +17,9 @@ from app.security.dependencies import get_current_user
 from app.models.user import User
 from app.models.device import Device
 from app.models.security_event import SecurityEvent, SecurityEventSeverity, SecurityEventType
+from app.agent.collectors.network import CompletedFlowRecord
+from app.agent.transport.events import SecurityEventTransport
+from app.ml.inference import GuardianXInference
 
 
 def _create_in_memory_session():
@@ -64,6 +69,99 @@ def _create_event(db, device: Device, timestamp: datetime, *, source: str = "tes
     db.commit()
     db.refresh(event)
     return event
+
+
+def test_network_flow_transport_post_contains_guardianx_v2_ml_detection_and_persists_event() -> None:
+    db = _create_in_memory_session()
+    user = User(username="routealice", email="routealice@example.com", hashed_password="x")
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    agent_id = uuid4()
+    device = Device(agent_id=agent_id, user_id=user.id, hostname="host", operating_system="Linux")
+    db.add(device)
+    db.commit()
+    db.refresh(device)
+
+    _configure_overrides(db, user)
+    client = TestClient(app)
+
+    record = CompletedFlowRecord(
+        collector_scope="integration-test",
+        protocol="TCP",
+        source_ip="10.0.0.1",
+        source_port=4000,
+        destination_ip="10.0.0.2",
+        destination_port=443,
+        forward_source_ip="10.0.0.1",
+        forward_source_port=4000,
+        forward_destination_ip="10.0.0.2",
+        forward_destination_port=443,
+        flow_start_timestamp=1.0,
+        flow_end_timestamp=3.0,
+        flow_duration=2.0,
+        forward_packet_count=1,
+        backward_packet_count=0,
+        forward_byte_count=10,
+        backward_byte_count=0,
+        packet_rate=0.5,
+        byte_rate=5.0,
+        forward_backward_packet_ratio=None,
+        quality_status="valid",
+        missing_fields=(),
+        model_ready=True,
+    )
+
+    inference = GuardianXInference(
+        "D:/VScode/Projects/GuardianX/backend/ml/models/guardianx_isolation_forest_v2.joblib"
+    )
+    expected = inference.predict(record.to_guardianx_v2_feature_vector())
+    expected_ml = {
+        "model": "guardianx_isolation_forest_v2",
+        "schema_version": "v2",
+        "prediction": expected.prediction,
+        "anomaly_score": expected.anomaly_score,
+    }
+
+    def fake_post(url: str, *, json: object, headers: dict[str, str], timeout: float):
+        assert url == f"http://testserver/devices/{agent_id}/events"
+        response = client.post(
+            f"/devices/{agent_id}/events",
+            json=json,
+            headers=headers,
+        )
+        return httpx.Response(
+            status_code=response.status_code,
+            json=response.json(),
+            request=httpx.Request("POST", url),
+        )
+
+    try:
+        with patch("app.agent.transport.events.httpx.post", side_effect=fake_post):
+            transport = SecurityEventTransport(
+                base_url="http://testserver",
+                agent_id=agent_id,
+                access_token="token",
+                inference=inference,
+            )
+            transport.publish(record)
+
+        response = client.get(f"/devices/{agent_id}/events")
+        assert response.status_code == 200
+        payload = response.json()[0]["payload"]
+        assert payload["flow_duration"] == 2.0
+        assert payload["forward_packet_count"] == 1
+        assert payload["backward_packet_count"] == 0
+        assert payload["ml_detection"] == expected_ml
+
+        persisted = db.scalar(
+            select(SecurityEvent).where(SecurityEvent.device_id == device.id)
+        )
+        assert persisted is not None
+        assert persisted.payload["ml_detection"] == expected_ml
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_create_event_endpoint_success() -> None:
