@@ -10,9 +10,11 @@ independent and can be used without Scapy installed.
 import logging
 from collections.abc import Callable
 
+from scapy.arch import get_if_list
 from scapy.config import conf
 from scapy.layers.inet import IP, TCP, UDP
 from scapy.layers.inet6 import IPv6
+from scapy.interfaces import resolve_iface
 from scapy.packet import Packet
 from scapy.sendrecv import sniff
 
@@ -100,8 +102,22 @@ class WindowsScapyPacketSource:
         """
         # Npcap is the verified Windows capture backend for this adapter.
         conf.use_pcap = True
+        interfaces = get_if_list()
+        interface_is_listed = self.interface in interfaces if self.interface else False
+        logger.info(
+            "Scapy interfaces=%s configured_interface=%r interface_exact_match=%s",
+            interfaces,
+            self.interface,
+            interface_is_listed,
+        )
+        resolved_interface: object = self.interface
+        if self.interface:
+            try:
+                resolved_interface = resolve_iface(self.interface)
+            except ValueError:
+                pass
         sniff_options: dict[str, object] = {
-            "iface": self.interface,
+            "iface": resolved_interface,
             "count": self.capture_count,
             "prn": self._handle_packet,
             "store": False,

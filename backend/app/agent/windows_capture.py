@@ -252,6 +252,10 @@ def main() -> int:
     if args.live and args.demo:
         parser.error("Choose either --live or --demo, not both.")
 
+    access_token = args.access_token
+    if args.live and access_token is None:
+        access_token = os.environ.get("GUARDIANX_ACCESS_TOKEN")
+
     if args.live:
         run_live_capture(
             interface=args.interface,
@@ -260,7 +264,7 @@ def main() -> int:
             packet_filter=args.packet_filter,
             base_url=args.api_base_url,
             agent_id=args.agent_id,
-            access_token=args.access_token,
+            access_token=access_token,
         )
         return 0
 
