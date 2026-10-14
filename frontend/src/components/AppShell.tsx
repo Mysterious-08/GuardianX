@@ -18,7 +18,7 @@ interface AppShellProps {
 export function AppShell({ children, consoleState, description, isRefreshing, onLogout, onNavigate, onRefresh, title, username }: AppShellProps) {
   return (
     <div className="app-shell">
-      <Sidebar activeItem={title === 'Security Events' ? 'Security Events' : title.startsWith('Endpoint') ? 'Endpoints' : 'Overview'} consoleState={consoleState} onNavigate={onNavigate} />
+      <Sidebar activeItem={title === 'Security Events' ? 'Security Events' : title === 'Backup & Recovery' ? 'Backup & Recovery' : title.startsWith('Endpoint') ? 'Endpoints' : 'Overview'} consoleState={consoleState} onNavigate={onNavigate} />
       <div className="main-column">
         <Header consoleState={consoleState} description={description} isRefreshing={isRefreshing} onLogout={onLogout} onRefresh={onRefresh} title={title} username={username} />
         <main className="main-content">{children}</main>

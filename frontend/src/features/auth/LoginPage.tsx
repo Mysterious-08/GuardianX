@@ -40,9 +40,8 @@ export function LoginPage({ onNavigate, registrationComplete = false }: LoginPag
     <main className="login-page">
       <section className="login-panel" aria-labelledby="login-title">
         <div className="login-brand">
-          <span className="brand-mark" aria-hidden="true">GX</span>
-          <div>
-            <strong>GuardianX</strong>
+          <div className="brand-identity">
+            <img className="brand-wordmark" src="/brand/guardianx-wordmark.svg" alt="GuardianX" />
             <span>Endpoint defense</span>
           </div>
         </div>

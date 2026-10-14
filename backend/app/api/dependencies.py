@@ -9,6 +9,7 @@ from app.services.device import DeviceService
 from app.services.device_inventory import DeviceInventoryService
 from app.services.dashboard import DashboardService
 from app.services.security_event import SecurityEventService
+from app.services.backup import BackupRecoveryService
 
 
 def get_device_service(db: DBSessionDep) -> DeviceService:
@@ -52,4 +53,14 @@ def get_security_event_service(db: DBSessionDep) -> SecurityEventService:
 SecurityEventServiceDep = Annotated[
     SecurityEventService,
     Depends(get_security_event_service),
+]
+
+
+def get_backup_recovery_service(db: DBSessionDep) -> BackupRecoveryService:
+    return BackupRecoveryService(db=db)
+
+
+BackupRecoveryServiceDep = Annotated[
+    BackupRecoveryService,
+    Depends(get_backup_recovery_service),
 ]

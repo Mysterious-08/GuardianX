@@ -10,6 +10,7 @@ import { DashboardPage } from './features/dashboard/DashboardPage'
 import { EndpointInventoryPage } from './features/devices/EndpointInventoryPage'
 import { EndpointPosturePage } from './features/devices/EndpointPosturePage'
 import { SecurityEventsPage } from './features/security-events/SecurityEventsPage'
+import { BackupRecoveryPage } from './features/backups/BackupRecoveryPage'
 import type { ConsoleState, DeviceSummary } from './types/api'
 
 function navigate(path: string): void {
@@ -27,6 +28,7 @@ function AuthenticatedApp() {
   const postureMatch = path.match(/^\/devices\/([^/]+)\/posture$/)
   const isPosture = postureMatch !== null
   const isSecurityEvents = path === '/security-events'
+  const isBackupRecovery = path === '/backups'
   const goToLogin = useCallback(() => {
     logout()
     navigate('/login')
@@ -43,15 +45,22 @@ function AuthenticatedApp() {
   return (
     <AppShell
       consoleState={consoleState}
-      description={isSecurityEvents ? 'Security activity across GuardianX-managed endpoints' : isPosture ? 'Device health, inventory, and security activity' : path === '/devices' ? 'GuardianX-managed endpoint inventory' : 'Endpoint visibility and security status'}
+      description={isSecurityEvents ? 'Security activity across GuardianX-managed endpoints' : isBackupRecovery ? 'Verified file snapshots and isolated recovery jobs' : isPosture ? 'Device health, inventory, and security activity' : path === '/devices' ? 'GuardianX-managed endpoint inventory' : 'Endpoint visibility and security status'}
       isRefreshing={isRefreshing}
       onLogout={goToLogin}
       onNavigate={navigate}
       onRefresh={() => setRefreshSignal((signal) => signal + 1)}
-      title={isSecurityEvents ? 'Security Events' : isPosture ? 'Endpoint Posture' : path === '/devices' ? 'Endpoint Inventory' : 'Overview'}
+      title={isSecurityEvents ? 'Security Events' : isBackupRecovery ? 'Backup & Recovery' : isPosture ? 'Endpoint Posture' : path === '/devices' ? 'Endpoint Inventory' : 'Overview'}
       username={user.username}
     >
-      {isSecurityEvents ? (
+      {isBackupRecovery ? (
+        <BackupRecoveryPage
+          onLoadingChange={setIsRefreshing}
+          onConsoleStateChange={setConsoleState}
+          onSessionExpired={goToLogin}
+          refreshSignal={refreshSignal}
+        />
+      ) : isSecurityEvents ? (
         <SecurityEventsPage
           onLoadingChange={setIsRefreshing}
           onConsoleStateChange={setConsoleState}
@@ -103,7 +112,7 @@ function RoutedApp() {
 
   useEffect(() => {
     if (status === 'loading') return
-    if (status === 'authenticated' && path !== '/dashboard' && path !== '/devices' && path !== '/security-events' && !/^\/devices\/[^/]+\/posture$/.test(path)) navigate('/dashboard')
+    if (status === 'authenticated' && path !== '/dashboard' && path !== '/devices' && path !== '/security-events' && path !== '/backups' && !/^\/devices\/[^/]+\/posture$/.test(path)) navigate('/dashboard')
     if (status === 'unauthenticated' && path !== '/login' && path !== '/register') navigate('/login')
   }, [path, status])
 

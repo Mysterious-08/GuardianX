@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 from uuid import UUID
 
 from app.api.dependencies import (
@@ -8,14 +8,26 @@ from app.api.dependencies import (
     DeviceInventoryServiceDep,
     SecurityEventServiceDep,
 )
+from app.database.session import SessionLocal
 from app.schemas.device import DeviceListResponse, DeviceRegisterRequest, DeviceResponse
 from app.schemas.heartbeat import HeartbeatRequest, HeartbeatResponse
 from app.schemas.device_inventory import DeviceInventoryRequest, DeviceInventoryResponse
 from app.schemas.security_event import SecurityEventRequest, SecurityEventResponse
 from app.security.dependencies import CurrentUserDep
+from app.models.backup import RecoveryStatus
+from app.models.security_event import SecurityEventType
+from app.services.backup import BackupRecoveryService
+from app.services.incident_recovery import IncidentRecoveryService
 
 
 router = APIRouter(prefix="/devices", tags=["Devices"])
+
+
+def _run_incident_recovery(event_id: UUID) -> None:
+    with SessionLocal() as db:
+        job = IncidentRecoveryService(db).process_event(event_id)
+        if job is not None and job.status is RecoveryStatus.QUEUED and job.security_event_id is not None:
+            BackupRecoveryService(db).run_recovery(job.id)
 
 
 @router.get(
@@ -119,6 +131,7 @@ def get_inventory(
 def create_security_event(
     agent_id: UUID,
     event_data: SecurityEventRequest,
+    background_tasks: BackgroundTasks,
     current_user: CurrentUserDep,
     security_event_service: SecurityEventServiceDep,
 ) -> SecurityEventResponse:
@@ -132,6 +145,8 @@ def create_security_event(
         agent_id=agent_id,
         event_data=event_data,
     )
+    if event.event_type is SecurityEventType.FILE:
+        background_tasks.add_task(_run_incident_recovery, event.id)
     return event
 
 

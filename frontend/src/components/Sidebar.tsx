@@ -10,6 +10,7 @@ const navigationItems = [
   { label: 'Overview', path: '/dashboard' },
   { label: 'Endpoints', path: '/devices' },
   { label: 'Security Events', path: '/security-events' },
+  { label: 'Backup & Recovery', path: '/backups' },
 ]
 
 export function Sidebar({ activeItem, consoleState, onNavigate }: SidebarProps) {
@@ -23,10 +24,9 @@ export function Sidebar({ activeItem, consoleState, onNavigate }: SidebarProps) 
   return (
     <aside className="sidebar" aria-label="Primary navigation">
       <div className="brand">
-        <span className="brand-mark" aria-hidden="true">GX</span>
-        <div>
-          <strong>GuardianX</strong>
-          <span>AI-POWERED ENDPOINT SECURITY</span>
+        <div className="brand-identity">
+          <img className="brand-wordmark" src="/brand/guardianx-wordmark.svg" alt="GuardianX" />
+          <span>AI-powered endpoint security</span>
         </div>
       </div>
 

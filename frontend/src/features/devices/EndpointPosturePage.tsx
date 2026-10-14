@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { ApiError } from '../../api/client'
+import { getDevices } from '../../api/devices'
 import { getDeviceInventory } from '../../api/inventory'
 import { getDeviceSecurityEvents } from '../../api/securityEvents'
 import { ErrorState } from '../../components/ErrorState'
@@ -49,6 +50,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export function EndpointPosturePage({ agentId, device, onBack, onConsoleStateChange, onLoadingChange, onSessionExpired, refreshSignal }: EndpointPosturePageProps) {
+  const [deviceLookup, setDeviceLookup] = useState<{ agentId: string; device: DeviceSummary | null } | null>(null)
   const [inventory, setInventory] = useState<DeviceInventory | null>(null)
   const [inventoryLoading, setInventoryLoading] = useState(true)
   const [inventoryUnavailable, setInventoryUnavailable] = useState(false)
@@ -65,6 +67,33 @@ export function EndpointPosturePage({ agentId, device, onBack, onConsoleStateCha
     }
     return false
   }, [onConsoleStateChange, onSessionExpired])
+
+  useEffect(() => {
+    if (device?.agent_id === agentId) return
+
+    let cancelled = false
+    void getDevices().then((result) => {
+      if (!cancelled) {
+        setDeviceLookup({
+          agentId,
+          device: result.devices.find((item) => item.agent_id === agentId) ?? null,
+        })
+      }
+    }).catch((error: unknown) => {
+      if (!cancelled) handleApiError(error)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [agentId, device, handleApiError])
+
+  const routeDevice = device?.agent_id === agentId
+    ? device
+    : deviceLookup?.agentId === agentId
+      ? deviceLookup.device
+      : null
+  const deviceLoading = device?.agent_id !== agentId && deviceLookup?.agentId !== agentId
 
   const loadPosture = useCallback(() => {
     setInventoryLoading(true)
@@ -97,20 +126,21 @@ export function EndpointPosturePage({ agentId, device, onBack, onConsoleStateCha
     if (!inventoryLoading && !eventsLoading) onLoadingChange(false)
   }, [eventsLoading, inventoryLoading, onLoadingChange])
 
-  if (!device) return <ErrorState authenticationRequired={false} onRetry={onBack} title="Endpoint unavailable" description="This endpoint is no longer available in your GuardianX inventory." />
+  if (!routeDevice && deviceLoading) return <LoadingState />
+  if (!routeDevice) return <ErrorState authenticationRequired={false} onRetry={onBack} title="Endpoint unavailable" description="This endpoint is no longer available in your GuardianX inventory." />
 
-  const statusLabel = device.status === 'REGISTERED' && device.last_seen === null ? 'Uninitialized' : undefined
+  const statusLabel = routeDevice.status === 'REGISTERED' && routeDevice.last_seen === null ? 'Uninitialized' : undefined
 
   return (
     <div className="posture-content">
       <button className="button posture-back" type="button" onClick={onBack}>← Endpoint Inventory</button>
       <div className="posture-heading">
-        <div><p className="eyebrow">Endpoint posture</p><h2>{device.device_name ?? device.hostname}</h2><p>{device.hostname} <span className="posture-id">{device.id}</span></p></div>
-        <StatusBadge status={device.status} label={statusLabel} />
+        <div><p className="eyebrow">Endpoint posture</p><h2>{routeDevice.device_name ?? routeDevice.hostname}</h2><p>{routeDevice.hostname} <span className="posture-id">{routeDevice.id}</span></p></div>
+        <StatusBadge status={routeDevice.status} label={statusLabel} />
       </div>
       <section className="panel posture-section posture-device-section">
         <p className="eyebrow">Device</p>
-        <div className="posture-details"><Detail label="Device name" value={device.device_name ?? device.hostname} /><Detail label="Hostname" value={device.hostname} /><Detail label="Operating system" value={inventory?.operating_system} /><Detail label="OS version" value={inventory?.os_version} /><Detail label="Architecture" value={inventory?.architecture} /><Detail label="Agent version" value={inventory?.agent_version} /><Detail label="Status" value={statusLabel ?? device.status} /><Detail label="Last seen" value={formatLastSeen(device.last_seen)} /></div>
+        <div className="posture-details"><Detail label="Device name" value={routeDevice.device_name ?? routeDevice.hostname} /><Detail label="Hostname" value={routeDevice.hostname} /><Detail label="Operating system" value={inventory?.operating_system} /><Detail label="OS version" value={inventory?.os_version} /><Detail label="Architecture" value={inventory?.architecture} /><Detail label="Agent version" value={inventory?.agent_version} /><Detail label="Status" value={statusLabel ?? routeDevice.status} /><Detail label="Last seen" value={formatLastSeen(routeDevice.last_seen)} /></div>
       </section>
       {inventoryLoading && <LoadingState />}
       {!inventoryLoading && inventoryUnavailable && <section className="state-panel posture-empty"><div><p className="eyebrow">Hardware inventory</p><h2>Inventory unavailable</h2><p>This endpoint has not reported an inventory snapshot yet.</p></div></section>}

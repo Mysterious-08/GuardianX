@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 176" role="img" aria-labelledby="guardianx-title">
+  <title id="guardianx-title">GuardianX — Endpoint Security Reimagined</title>
+  <g fill="#E5E7EB">
+    <path d="M100 12H34C17 12 8 22 8 39v46c0 17 10 27 27 27h65V59H58v19h22v14H37c-7 0-9-3-9-10V42c0-7 3-10 10-10h62z"/>
+    <path d="M118 12h20v68c0 9 4 13 13 13h29c9 0 13-4 13-13V12h20v70c0 21-11 32-33 32h-29c-22 0-33-11-33-32z"/>
+    <path fill-rule="evenodd" d="m225 112 39-100h31l40 100h-23l-9-24h-46l-9 24zm39-43h31l-15-39z"/>
+    <path fill-rule="evenodd" d="M352 12h63c24 0 36 10 36 31 0 17-8 27-23 30l29 39h-27l-25-36h-33v36h-20zm20 20v24h41c12 0 18-4 18-12s-6-12-18-12z"/>
+    <path fill-rule="evenodd" d="M465 12h48c34 0 51 17 51 50s-17 50-51 50h-48zm20 20v60h27c21 0 31-10 31-30s-10-30-31-30z"/>
+    <path d="M580 12h20v100h-20z"/>
+    <path fill-rule="evenodd" d="m618 112 39-100h31l40 100h-23l-9-24h-46l-9 24zm39-43h31l-15-39z"/>
+    <path d="M741 112V12h22l48 65V12h20v100h-21l-49-65v65z"/>
+  </g>
+  <path fill="#00E676" d="M855 12h27l34 35 35-35h27l-49 50 49 50h-27l-35-35-34 35h-27l48-50z"/>
+  <text x="500" y="163" fill="#E5E7EB" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="500" letter-spacing="9" text-anchor="middle">ENDPOINT SECURITY REIMAGINED</text>
+</svg>
